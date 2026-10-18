@@ -28,7 +28,7 @@ import javax.net.ssl.HttpsURLConnection
 @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
 class WebRemoteBridge(private val context: Context, private val player: Player, private val scope: CoroutineScope) {
     companion object {
-        const val DEFAULT_URL = ""
+        const val DEFAULT_URL = "https://vitune.local:4180"
         private val videoId = Regex("[A-Za-z0-9_-]{11}")
         private fun file(context: Context) = AtomicFile(File(context.noBackupFilesDir, "vitune-web-connection.json"))
         fun connection(context: Context): JSONObject? = runCatching {
