@@ -391,4 +391,6 @@
     <string name="spotify_import_network_error">Importação interrompida após erros repetidos na busca. Confira a conexão e importe o arquivo novamente.</string>
     <string name="spotify_import_unmatched">Músicas não encontradas ou com erro na busca:</string>
     <string name="spotify_import_start">Importar para Favoritos</string>
+    <string name="spotify_export_title">Exportar curtidas do Spotify</string>
+    <string name="spotify_export_description">Abra o Exportify no navegador, entre no Spotify e baixe o CSV das músicas curtidas. Depois volte aqui para importar o arquivo.</string>
 </resources>
