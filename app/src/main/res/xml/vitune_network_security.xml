@@ -1,4 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <network-security-config>
     <base-config cleartextTrafficPermitted="false" />
+    <domain-config cleartextTrafficPermitted="false">
+        <domain>vitune.local</domain>
+        <trust-anchors>
+            <certificates src="@raw/vitune_local_cert" />
+        </trust-anchors>
+    </domain-config>
 </network-security-config>
