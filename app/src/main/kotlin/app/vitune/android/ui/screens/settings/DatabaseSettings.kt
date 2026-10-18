@@ -81,6 +81,8 @@ fun DatabaseSettings() = with(DataPreferences) {
     }
 
     SettingsCategoryScreen(title = stringResource(R.string.database)) {
+        SpotifyImportSettings()
+
         SettingsGroup(title = stringResource(R.string.cleanup)) {
             SwitchSettingsEntry(
                 title = stringResource(R.string.pause_playback_history),
