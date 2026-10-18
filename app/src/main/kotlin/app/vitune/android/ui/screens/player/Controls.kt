@@ -2,6 +2,7 @@ package app.vitune.android.ui.screens.player
 
 import androidx.annotation.DrawableRes
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateDp
 import androidx.compose.animation.core.animateDpAsState
@@ -19,7 +20,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -43,6 +43,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -235,24 +241,17 @@ private fun ModernControls(
     modifier: Modifier = Modifier,
     controlHeight: Dp = 64.dp
 ) {
-    val previousButtonContent: @Composable RowScope.() -> Unit = {
-        SkipButton(
-            iconId = R.drawable.play_skip_back,
-            onClick = binder.player::forceSeekToPrevious,
-            modifier = Modifier.weight(1f),
-            offsetOnPress = -DefaultOffset
-        )
-    }
-
-    val likeButtonContent: @Composable RowScope.() -> Unit = {
-        BigIconButton(
-            iconId = if (likedAt == null) R.drawable.heart_outline else R.drawable.heart,
-            onClick = {
-                setLikedAt(if (likedAt == null) System.currentTimeMillis() else null)
-            },
-            modifier = Modifier.weight(1f)
-        )
-    }
+    val (colorPalette) = LocalAppearance.current
+    val favoritesLabel = stringResource(R.string.favorites)
+    val isFavorite = likedAt != null
+    val favoriteBackground by animateColorAsState(
+        targetValue = if (isFavorite) colorPalette.accent else colorPalette.background2,
+        label = "favoriteBackground"
+    )
+    val favoriteColor by animateColorAsState(
+        targetValue = if (isFavorite) colorPalette.onAccent else colorPalette.text,
+        label = "favoriteColor"
+    )
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -267,15 +266,20 @@ private fun ModernControls(
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(if (PlayerPreferences.showLike) 4.dp else 8.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            if (PlayerPreferences.showLike) previousButtonContent()
+            SkipButton(
+                iconId = R.drawable.play_skip_back,
+                onClick = binder.player::forceSeekToPrevious,
+                modifier = Modifier.weight(1f),
+                offsetOnPress = -DefaultOffset
+            )
             PlayButton(
                 radius = playButtonRadius,
                 shouldBePlaying = shouldBePlaying,
                 modifier = Modifier
                     .height(controlHeight)
-                    .weight(if (PlayerPreferences.showLike) 3f else 4f)
+                    .weight(3f)
             )
             SkipButton(
                 iconId = R.drawable.play_skip_forward,
@@ -289,7 +293,21 @@ private fun ModernControls(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            if (PlayerPreferences.showLike) likeButtonContent() else previousButtonContent()
+            BigIconButton(
+                iconId = if (isFavorite) R.drawable.heart else R.drawable.heart_outline,
+                onClick = {
+                    setLikedAt(if (isFavorite) null else System.currentTimeMillis())
+                },
+                backgroundColor = favoriteBackground,
+                contentColor = favoriteColor,
+                modifier = Modifier
+                    .weight(1f)
+                    .semantics {
+                        contentDescription = favoritesLabel
+                        selected = isFavorite
+                        role = Role.Button
+                    }
+            )
 
             Column(modifier = Modifier.weight(4f)) {
                 SeekBar(
@@ -303,7 +321,6 @@ private fun ModernControls(
         Spacer(modifier = Modifier.weight(1f))
     }
 }
-
 @Composable
 private fun SkipButton(
     @DrawableRes iconId: Int,
