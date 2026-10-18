@@ -16,6 +16,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -158,6 +159,7 @@ private suspend fun findSpotifyTrack(track: SpotifyTrack): Innertube.SongItem? {
 @Composable
 fun SpotifyImportSettings() {
     val context = LocalContext.current
+    val uriHandler = LocalUriHandler.current
     val scope = rememberCoroutineScope()
     var csv by remember { mutableStateOf<SpotifyCsv?>(null) }
     var visible by remember { mutableStateOf(false) }
@@ -204,6 +206,11 @@ fun SpotifyImportSettings() {
         }
     }
     SettingsGroup(title = title) {
+        SettingsEntry(
+            title = stringResource(R.string.spotify_export_title),
+            text = stringResource(R.string.spotify_export_description),
+            onClick = { uriHandler.openUri("https://exportify.app/") }
+        )
         SettingsEntry(title = title, text = description, isEnabled = !running && !reading, onClick = {
             try { launcher.launch(arrayOf("*/*")) }
             catch (_: ActivityNotFoundException) { context.toast(pickerError) }
