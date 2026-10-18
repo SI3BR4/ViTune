@@ -21,6 +21,18 @@ class SpotifyCsvTest {
         assertEquals(1, result.invalid)
     }
 
+    @Test fun portugueseExportifyHeaders() {
+        val input = "\"URI da faixa\",\"Nome da faixa\",\"URI(s) do artista\",\"Nome(s) do artista\",\"Duração da faixa (ms)\"\n" +
+            "spotify:track:example,Canção,spotify:artist:example,Artista,180000\n" +
+            "spotify:track:example,Outro título,spotify:artist:example,Artista,180000\n"
+        val parsed = parseSpotifyCsv(input)
+        assertEquals(1, parsed.tracks.size)
+        assertEquals("Canção", parsed.tracks[0].title)
+        assertEquals("Artista", parsed.tracks[0].artists)
+        assertEquals(180000L, parsed.tracks[0].durationMs)
+        assertEquals(1, parsed.duplicates)
+    }
+
     @Test fun semicolonExportAndDuplicateWithoutUri() {
         val csv = "Track Name;Artist Name(s);Duration (ms)\nCanção;Artista;100000\nCanção;Artista;100000\n"
         assertEquals(1, parseSpotifyCsv(csv).tracks.size)
