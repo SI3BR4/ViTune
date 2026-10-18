@@ -22,7 +22,10 @@ jobs:
         with:
           packages: platform-tools
       - name: Instalar componentes Android
-        run: sdkmanager 'platforms;android-37' 'build-tools;37.0.0' 'ndk;29.0.14206865' 'cmake;4.1.2'
+        run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0' 'ndk;29.0.14206865' 'cmake;4.1.2'
+      - name: Compatibilidade do APK de teste com SDK 36
+        run: |
+          find app core compose -name build.gradle.kts -exec sed -i 's/compileSdk = 37/compileSdk = 36/g; s/targetSdk = 37/targetSdk = 36/g' {} +
       - name: Gerar APK de teste
         shell: bash
         run: |
