@@ -60,7 +60,7 @@ fun WebRemoteSettings() {
         Spacer(Modifier.height(12.dp))
         BasicText(text = status, style = typography.xs)
         Spacer(Modifier.height(12.dp))
-        BasicText(text = "Computador: 192.168.1.112", style = typography.xs)
+        BasicText(text = "Endereço do computador: configure apenas na versão local", style = typography.xs)
         Spacer(Modifier.height(12.dp))
         TextField(value = code, onValueChange = { code = it.filter(Char::isDigit).take(6) },
             hintText = "CÃ³digo de 6 nÃºmeros", singleLine = true, enabled = !busy,
