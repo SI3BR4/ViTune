@@ -89,10 +89,11 @@ internal fun parseSpotifyCsv(source: String): SpotifyCsv {
     if (field.isNotEmpty() || row.isNotEmpty() || closed) finishRow()
     require(rows.isNotEmpty()) { "Empty CSV" }
     val headers = rows.first().map { it.lowercase(Locale.ROOT) }
-    val titleColumn = headers.indexOf("track name")
-    val artistColumn = headers.indexOf("artist name(s)")
-    val durationColumn = headers.indexOf("duration (ms)")
-    val uriColumn = headers.indexOf("track uri")
+    fun column(vararg names: String) = headers.indexOfFirst { it in names }
+    val titleColumn = column("track name", "nome da faixa")
+    val artistColumn = column("artist name(s)", "nome(s) do artista")
+    val durationColumn = column("duration (ms)", "duração da faixa (ms)")
+    val uriColumn = column("track uri", "uri da faixa")
     require(titleColumn >= 0 && artistColumn >= 0) { "Expected Exportify CSV" }
     val tracks = mutableListOf<SpotifyTrack>()
     val keys = mutableSetOf<String>()
