@@ -1,4 +1,4 @@
-name: APK com menu de icones
+name: APK com importacao Spotify
 on:
   workflow_dispatch:
   push:
@@ -30,10 +30,10 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          java -classpath gradle/wrapper/gradle-wrapper.jar org.gradle.wrapper.GradleWrapperMain :app:assembleDebug --no-daemon --stacktrace 2>&1 | tee build-apk.log
+          java -classpath gradle/wrapper/gradle-wrapper.jar org.gradle.wrapper.GradleWrapperMain :app:testDebugUnitTest :app:assembleDebug --no-daemon --stacktrace 2>&1 | tee build-apk.log
       - uses: actions/upload-artifact@v4
         with:
-          name: ViTune-menu-icones-APK
+          name: ViTune-Spotify-CSV-APK
           path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
           retention-days: 14
