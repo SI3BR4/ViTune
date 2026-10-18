@@ -326,6 +326,7 @@ class PlayerService : InvincibleService(), Player.Listener, PlaybackStatsListene
 
         updateRepeatMode()
         maybeRestorePlayerQueue()
+        WebRemoteBridge(this, player, coroutineScope).start()
 
         mediaSession = MediaSession(baseContext, TAG).apply {
             setCallback(SessionCallback())
