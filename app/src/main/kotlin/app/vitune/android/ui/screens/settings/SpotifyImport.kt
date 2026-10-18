@@ -147,7 +147,7 @@ private suspend fun findSpotifyTrack(track: SpotifyTrack): Innertube.SongItem? {
         Innertube.searchPage(
             body = SearchBody(query = track.title + " " + track.artists.substringBefore(';'), params = Innertube.SearchFilter.Song.value),
             fromMusicShelfRendererContent = Innertube.SongItem.Companion::from
-        ).getOrThrow()?.items.orEmpty()
+        ).let { it ?: throw java.io.IOException("Search interrupted") }.getOrThrow()?.items.orEmpty()
     } ?: throw java.io.IOException("Search timed out")
     return songs.map { song ->
         song to spotifyMatchScore(track, song.info?.name.orEmpty(), song.authors.orEmpty().mapNotNull { it.name }, songSeconds(song.durationText))
