@@ -5,19 +5,17 @@ import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColor
-import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.updateTransition
+import androidx.compose.foundation.background
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.only
@@ -40,25 +38,24 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEachIndexed
 import app.vitune.android.LocalPlayerAwareWindowInsets
 import app.vitune.android.R
 import app.vitune.android.ui.screens.settings.SwitchSettingsEntry
 import app.vitune.android.utils.center
-import app.vitune.android.utils.color
 import app.vitune.android.utils.semiBold
 import app.vitune.core.ui.Dimensions
 import app.vitune.core.ui.LocalAppearance
 import app.vitune.core.ui.utils.isLandscape
-import app.vitune.core.ui.utils.roundedShape
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.parcelize.IgnoredOnParcel
@@ -278,64 +275,34 @@ inline fun NavigationRail(
                     visible = tabIndex == index || tab.key !in hiddenTabs,
                     label = ""
                 ) {
-                    val dothAlpha by transition.animateFloat(label = "") {
-                        if (it == index) 1f else 0f
+                    val iconColor by transition.animateColor(label = "tabIconColor") {
+                        if (it == index) colorPalette.text else colorPalette.textSecondary
+                    }
+                    val indicatorColor by transition.animateColor(label = "tabIndicatorColor") {
+                        if (it == index) colorPalette.text.copy(alpha = 0.12f)
+                        else Color.Transparent
                     }
 
-                    val textColor by transition.animateColor(label = "") {
-                        if (it == index) colorPalette.text else colorPalette.textDisabled
-                    }
-
-                    val iconContent: @Composable () -> Unit = {
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .padding(vertical = 4.dp)
+                            .size(48.dp)
+                            .clip(CircleShape)
+                            .background(indicatorColor)
+                            .semantics { selected = tabIndex == index }
+                            .combinedClickable(
+                                role = Role.Tab,
+                                onClick = { onTabIndexChange(index) },
+                                onLongClick = { editing = true }
+                            )
+                    ) {
                         Image(
                             painter = painterResource(tab.icon),
-                            contentDescription = null,
-                            colorFilter = ColorFilter.tint(colorPalette.text),
-                            modifier = Modifier
-                                .vertical(enabled = !isLandscape)
-                                .graphicsLayer {
-                                    alpha = dothAlpha
-                                    translationX = (1f - dothAlpha) * -48.dp.toPx()
-                                    rotationZ = if (isLandscape) 0f else -90f
-                                }
-                                .size(Dimensions.navigationRail.iconOffset * 2)
+                            contentDescription = tab.title(),
+                            colorFilter = ColorFilter.tint(iconColor),
+                            modifier = Modifier.size(24.dp)
                         )
-                    }
-
-                    val textContent: @Composable () -> Unit = {
-                        BasicText(
-                            text = tab.title(),
-                            style = typography.xs.semiBold.center.color(textColor),
-                            modifier = Modifier
-                                .vertical(enabled = !isLandscape)
-                                .rotate(if (isLandscape) 0f else -90f)
-                                .padding(horizontal = 16.dp),
-                            overflow = TextOverflow.Ellipsis,
-                            maxLines = 2
-                        )
-                    }
-
-                    val contentModifier = Modifier
-                        .clip(24.dp.roundedShape)
-                        .combinedClickable(
-                            onClick = { onTabIndexChange(index) },
-                            onLongClick = { editing = true }
-                        )
-
-                    if (isLandscape) Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = contentModifier
-                            .padding(vertical = 8.dp)
-                            .fillMaxWidth()
-                    ) {
-                        iconContent()
-                        textContent()
-                    } else Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = contentModifier.padding(horizontal = 8.dp)
-                    ) {
-                        iconContent()
-                        textContent()
                     }
                 }
             }
