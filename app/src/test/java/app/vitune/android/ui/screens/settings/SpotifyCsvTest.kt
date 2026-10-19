@@ -5,6 +5,21 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class SpotifyCsvTest {
+    @Test fun likedExportsStayInFavorites() {
+        assertEquals(null, spotifyPlaylistName("liked.csv"))
+        assertEquals(null, spotifyPlaylistName("LIKED.CSV"))
+        assertEquals(null, spotifyPlaylistName("liked (1).csv"))
+        assertEquals(null, spotifyPlaylistName("/Download/liked.csv"))
+    }
+
+    @Test fun eachOtherFileUsesItsPlaylistName() {
+        assertEquals("Treino", spotifyPlaylistName("Treino.csv"))
+        assertEquals("Noite, verão", spotifyPlaylistName("Noite, verão.CSV"))
+        assertEquals("Rock", spotifyPlaylistName("C:\\Download\\Rock.csv"))
+        assertEquals("liked remixes", spotifyPlaylistName("liked remixes.csv"))
+        assertEquals(listOf(null, "Treino", "Rock"), listOf("liked.csv", "Treino.csv", "Rock.csv").map(::spotifyPlaylistName))
+    }
+
     @Test fun quotesUnicodeDuplicatesAndInvalidRows() {
         val input = "\uFEFFTrack URI,Track Name,Artist Name(s),Duration (ms)\r\n" +
             "spotify:track:1,\"Olá, \"\"mundo\"\"\",Björk;Other,180000\r\n" +
