@@ -381,16 +381,17 @@
     <string name="auto_open_player_description">Expandir automaticamente o player ao tocar em uma música</string>
     <string name="pause_minimum_volume">Pausar no volume mínimo</string>
     <string name="spotify_import_title">Importar do Spotify</string>
-    <string name="spotify_import_description">Selecione o CSV do Exportify para adicionar as músicas encontradas aos Favoritos. Precisa de internet. Mantenha esta tela aberta durante a importação.</string>
+    <string name="spotify_import_description">Selecione um ou mais CSVs do Exportify. liked.csv vai para Curtidas; cada outro arquivo vai para uma playlist com o nome do arquivo. Precisa de internet. Mantenha esta tela aberta. Até 50 arquivos, 20 MB no total e 10.000 músicas por lote.</string>
     <string name="spotify_import_invalid">Não foi possível ler o arquivo. Selecione um CSV do Exportify com as colunas Track Name e Artist Name(s), de até 10 MB e 10.000 músicas.</string>
     <string name="spotify_import_reading">Lendo arquivo…</string>
-    <string name="spotify_import_preview">%1$d músicas prontas. %2$d duplicadas e %3$d linhas inválidas ignoradas. A importação busca cada título e artista online e adiciona as correspondências aos Favoritos.</string>
+    <string name="spotify_import_preview">%1$d músicas prontas. %2$d duplicadas e %3$d linhas inválidas ignoradas. As músicas encontradas serão adicionadas aos destinos abaixo, sem curtir automaticamente as músicas das playlists.</string>
     <string name="spotify_import_progress">Buscando %1$d de %2$d: %3$s</string>
-    <string name="spotify_import_summary">Adicionadas: %1$d\nJá nos Favoritos: %2$d\nNão encontradas ou com erro: %3$d\nRestantes: %4$d</string>
+    <string name="spotify_import_summary">Adicionadas: %1$d\nJá no destino: %2$d\nNão encontradas ou com erro: %3$d\nRestantes: %4$d</string>
     <string name="spotify_import_cancelled">Importação cancelada. As músicas já adicionadas foram mantidas. Você pode importar o mesmo arquivo novamente para continuar.</string>
     <string name="spotify_import_network_error">Importação interrompida após erros repetidos na busca. Confira a conexão e importe o arquivo novamente.</string>
     <string name="spotify_import_unmatched">Músicas não encontradas ou com erro na busca:</string>
-    <string name="spotify_import_start">Importar para Favoritos</string>
+    <string name="spotify_import_start">Importar arquivos selecionados</string>
     <string name="spotify_export_title">Exportar curtidas do Spotify</string>
     <string name="spotify_export_description">Abra o Exportify no navegador, entre no Spotify e baixe o CSV das músicas curtidas. Depois volte aqui para importar o arquivo.</string>
+    <string name="spotify_import_skipped_files">Arquivos ignorados (inválidos, sem acesso ou acima do limite do lote):</string>
 </resources>
