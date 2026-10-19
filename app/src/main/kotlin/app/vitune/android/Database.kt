@@ -379,6 +379,15 @@ interface DatabaseAccessor {
     @Query("SELECT * FROM Playlist WHERE id = :id")
     fun playlist(id: Long): Flow<Playlist?>
 
+    @Query("SELECT * FROM Playlist WHERE name = :name AND browseId IS NULL ORDER BY id LIMIT 1")
+    fun localPlaylistByName(name: String): Playlist?
+
+    @Query("SELECT EXISTS(SELECT 1 FROM SongPlaylistMap WHERE playlistId = :playlistId AND songId = :songId)")
+    fun playlistContainsSong(playlistId: Long, songId: String): Boolean
+
+    @Query("SELECT COALESCE(MAX(position), -1) FROM SongPlaylistMap WHERE playlistId = :playlistId")
+    fun lastPlaylistPosition(playlistId: Long): Int
+
     @RewriteQueriesToDropUnusedColumns
     @Transaction
     @Query(
