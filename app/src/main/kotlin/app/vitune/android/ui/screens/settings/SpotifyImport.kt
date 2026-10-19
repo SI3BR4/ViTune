@@ -1,6 +1,7 @@
 package app.vitune.android.ui.screens.settings
 
 import android.content.ActivityNotFoundException
+import android.provider.OpenableColumns
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Spacer
@@ -23,6 +24,8 @@ import androidx.compose.ui.unit.dp
 import app.vitune.android.Database
 import app.vitune.android.R
 import app.vitune.android.internal
+import app.vitune.android.models.Playlist
+import app.vitune.android.models.SongPlaylistMap
 import app.vitune.android.ui.components.themed.DefaultDialog
 import app.vitune.android.ui.components.themed.DialogTextButton
 import app.vitune.android.utils.asMediaItem
@@ -46,6 +49,15 @@ import kotlin.math.abs
 
 internal data class SpotifyTrack(val title: String, val artists: String, val durationMs: Long?)
 internal data class SpotifyCsv(val tracks: List<SpotifyTrack>, val duplicates: Int, val invalid: Int)
+internal data class SpotifyImportFile(val name: String, val playlistName: String?, val csv: SpotifyCsv)
+
+/** Exportify uses liked.csv for liked songs; other exports keep their playlist filename. */
+internal fun spotifyPlaylistName(fileName: String): String? {
+    val name = fileName.substringAfterLast('/').substringAfterLast('\\').trim()
+    val stem = if (name.endsWith(".csv", ignoreCase = true)) name.dropLast(4).trim() else name
+    if (Regex("liked(?:\\s*\\([0-9]+\\))?", RegexOption.IGNORE_CASE).matches(stem)) return null
+    return stem.ifBlank { "Spotify" }.take(200)
+}
 
 // RFC 4180 fields, including escaped quotes, delimiters and line breaks inside quotes.
 internal fun parseSpotifyCsv(source: String): SpotifyCsv {
@@ -161,7 +173,7 @@ fun SpotifyImportSettings() {
     val context = LocalContext.current
     val uriHandler = LocalUriHandler.current
     val scope = rememberCoroutineScope()
-    var csv by remember { mutableStateOf<SpotifyCsv?>(null) }
+    var csv by remember { mutableStateOf<List<SpotifyImportFile>?>(null) }
     var visible by remember { mutableStateOf(false) }
     var running by remember { mutableStateOf(false) }
     var reading by remember { mutableStateOf(false) }
@@ -177,8 +189,8 @@ fun SpotifyImportSettings() {
     val networkError = stringResource(R.string.spotify_import_network_error)
     val previewFormat = stringResource(R.string.spotify_import_preview)
     val pickerError = stringResource(R.string.no_file_chooser_installed)
-    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        if (uri != null) {
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
+        if (uris.isNotEmpty()) {
             reading = true
             visible = true
             status = context.getString(R.string.spotify_import_reading)
@@ -186,19 +198,54 @@ fun SpotifyImportSettings() {
             failures = emptyList()
             scope.launch {
                 try {
+                    val unreadable = mutableListOf<String>()
                     csv = withContext(Dispatchers.IO) {
-                        val bytes = context.contentResolver.openInputStream(uri)?.use { input -> val output = java.io.ByteArrayOutputStream(); val buffer = ByteArray(8192); var count = input.read(buffer); while (count >= 0) { require(output.size() + count <= 10 * 1024 * 1024); output.write(buffer, 0, count); count = input.read(buffer) }; output.toByteArray() }
-                            ?: error("Cannot read file")
-                        require(bytes.size <= 10 * 1024 * 1024)
-                        val charset = when {
-                            bytes.size >= 2 && bytes[0] == 0xff.toByte() && bytes[1] == 0xfe.toByte() -> Charsets.UTF_16LE
-                            bytes.size >= 2 && bytes[0] == 0xfe.toByte() && bytes[1] == 0xff.toByte() -> Charsets.UTF_16BE
-                            else -> Charsets.UTF_8
+                        require(uris.size <= 50)
+                        var totalBytes = 0
+                        var totalTracks = 0
+                        uris.mapIndexedNotNull { fileIndex, uri ->
+                            val name = runCatching {
+                                context.contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
+                                    if (cursor.moveToFirst()) cursor.getString(0) else null
+                                }
+                            }.getOrNull().orEmpty().ifBlank { "Spotify ${fileIndex + 1}.csv" }
+                            try {
+                                val bytes = context.contentResolver.openInputStream(uri)?.use { input ->
+                                    val output = java.io.ByteArrayOutputStream()
+                                    val buffer = ByteArray(8192)
+                                    var count = input.read(buffer)
+                                    while (count >= 0) {
+                                        require(output.size() + count <= 10 * 1024 * 1024)
+                                        output.write(buffer, 0, count)
+                                        count = input.read(buffer)
+                                    }
+                                    output.toByteArray()
+                                }
+                                    ?: error("Cannot read file")
+                                require(bytes.size <= 10 * 1024 * 1024)
+                                val charset = when {
+                                    bytes.size >= 2 && bytes[0] == 0xff.toByte() && bytes[1] == 0xfe.toByte() -> Charsets.UTF_16LE
+                                    bytes.size >= 2 && bytes[0] == 0xfe.toByte() && bytes[1] == 0xff.toByte() -> Charsets.UTF_16BE
+                                    else -> Charsets.UTF_8
+                                }
+                                totalBytes += bytes.size
+                                require(totalBytes <= 20 * 1024 * 1024)
+                                val parsed = parseSpotifyCsv(bytes.toString(charset))
+                                totalTracks += parsed.tracks.size
+                                require(totalTracks <= 10000)
+                                SpotifyImportFile(name, spotifyPlaylistName(name), parsed)
+                            } catch (e: CancellationException) { throw e }
+                            catch (_: Exception) { unreadable.add(name); null }
                         }
-                        parseSpotifyCsv(bytes.toString(charset))
                     }
                     val parsed = csv!!
-                    status = String.format(previewFormat, parsed.tracks.size, parsed.duplicates, parsed.invalid)
+                    csv = parsed.takeIf { it.isNotEmpty() }
+                    status = if (parsed.isEmpty()) invalidFile else String.format(previewFormat,
+                        parsed.sumOf { it.csv.tracks.size }, parsed.sumOf { it.csv.duplicates }, parsed.sumOf { it.csv.invalid }) +
+                        "\n\n" + parsed.joinToString("\n") { file ->
+                            file.name + " → " + (file.playlistName ?: context.getString(R.string.favorites))
+                        }
+                    if (unreadable.isNotEmpty()) status += "\n\n" + context.getString(R.string.spotify_import_skipped_files) + "\n" + unreadable.joinToString("\n")
                 } catch (e: CancellationException) { throw e }
                 catch (_: Exception) { status = invalidFile }
                 finally { reading = false }
@@ -220,7 +267,8 @@ fun SpotifyImportSettings() {
         val (_, typography) = LocalAppearance.current
         BasicText(text = title, style = typography.s)
         Spacer(Modifier.height(12.dp))
-        BasicText(text = status, style = typography.xs)
+        BasicText(text = status, style = typography.xs,
+            modifier = Modifier.heightIn(max = 240.dp).verticalScroll(rememberScrollState()))
         if (failures.isNotEmpty()) {
             Spacer(Modifier.height(12.dp))
             BasicText(
@@ -236,6 +284,7 @@ fun SpotifyImportSettings() {
                 csv = null
                 running = true
                 job = scope.launch {
+                    val total = pending.sumOf { it.csv.tracks.size }
                     var imported = 0
                     var existing = 0
                     var processed = 0
@@ -243,38 +292,56 @@ fun SpotifyImportSettings() {
                     val missed = mutableListOf<String>()
                     var reason = ""
                     try {
-                        for (track in pending.tracks) {
-                            status = String.format(progressFormat, processed + 1, pending.tracks.size, track.title)
-                            try {
-                                val outcome = withContext(Dispatchers.IO) {
-                                    val match = findSpotifyTrack(track)
-                                    if (match == null) 0 else {
-                                        val media = match.asMediaItem
-                                        if (Database.song(media.mediaId).first()?.likedAt != null) 2 else {
-                                            Database.internal.runInTransaction {
-                                                Database.insert(media)
-                                                Database.like(media.mediaId, System.currentTimeMillis())
+                        files@ for (file in pending) {
+                            for (track in file.csv.tracks) {
+                                status = file.name + "\n" + String.format(progressFormat, processed + 1, total, track.title)
+                                try {
+                                    val outcome = withContext(Dispatchers.IO) {
+                                        val match = findSpotifyTrack(track)
+                                        if (match == null) 0 else {
+                                            val media = match.asMediaItem
+                                            if (file.playlistName == null) {
+                                                if (Database.song(media.mediaId).first()?.likedAt != null) 2 else {
+                                                Database.internal.runInTransaction {
+                                                    Database.insert(media)
+                                                    Database.like(media.mediaId, System.currentTimeMillis())
+                                                }
+                                                1
+                                                }
+                                            } else {
+                                                var added = false
+                                                Database.internal.runInTransaction {
+                                                    val id = Database.localPlaylistByName(file.playlistName)?.id
+                                                        ?: Database.insert(Playlist(name = file.playlistName))
+                                                    check(id > 0)
+                                                    if (!Database.playlistContainsSong(id, media.mediaId)) {
+                                                        Database.insert(media)
+                                                        Database.insert(SongPlaylistMap(songId = media.mediaId, playlistId = id,
+                                                            position = Database.lastPlaylistPosition(id) + 1))
+                                                        added = true
+                                                    }
+                                                }
+                                                if (added) 1 else 2
                                             }
-                                            1
                                         }
                                     }
+                                    errors = 0
+                                    when (outcome) { 1 -> imported++; 2 -> existing++; else -> missed.add(file.name + ": " + track.title + " — " + track.artists) }
+                                } catch (e: CancellationException) { throw e }
+                                catch (_: Exception) {
+                                    errors++
+                                    missed.add(file.name + ": " + track.title + " — " + track.artists)
+                                    if (errors >= 3) { reason = networkError; break@files }
+                                    delay(2000)
                                 }
-                                errors = 0
-                                when (outcome) { 1 -> imported++; 2 -> existing++; else -> missed.add(track.title + " — " + track.artists) }
-                            } catch (e: CancellationException) { throw e }
-                            catch (_: Exception) {
-                                errors++
-                                missed.add(track.title + " — " + track.artists)
-                                if (errors >= 3) { reason = networkError; break }
-                                delay(2000)
+                                processed++
+                                delay(350)
                             }
-                            processed++
-                            delay(350)
                         }
                     } catch (_: CancellationException) { reason = cancelled }
                     finally {
                         failures = missed.toList()
-                        status = String.format(summaryFormat, imported, existing, missed.size, pending.tracks.size - imported - existing - missed.size) +
+                        status = String.format(summaryFormat, imported, existing, missed.size, total - imported - existing - missed.size) +
                             if (reason.isBlank()) "" else "\n" + reason
                         running = false
                     }
