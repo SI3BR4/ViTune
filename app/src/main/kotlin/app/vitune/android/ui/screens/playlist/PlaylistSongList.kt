@@ -15,6 +15,8 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -36,6 +38,8 @@ import app.vitune.android.ui.components.ShimmerHost
 import app.vitune.android.ui.components.themed.FloatingActionsContainerWithScrollToTop
 import app.vitune.android.ui.components.themed.Header
 import app.vitune.android.ui.components.themed.HeaderIconButton
+import app.vitune.android.ui.components.themed.Menu
+import app.vitune.android.ui.components.themed.MenuEntry
 import app.vitune.android.ui.components.themed.HeaderPlaceholder
 import app.vitune.android.ui.components.themed.LayoutWithAdaptiveThumbnail
 import app.vitune.android.ui.components.themed.NonQueuedMediaItemMenu
@@ -46,6 +50,8 @@ import app.vitune.android.ui.components.themed.adaptiveThumbnailContent
 import app.vitune.android.ui.items.SongItem
 import app.vitune.android.ui.items.SongItemPlaceholder
 import app.vitune.android.utils.PlaylistDownloadIcon
+import app.vitune.android.utils.addPlaylistToFavorites
+import app.vitune.android.utils.toast
 import app.vitune.android.utils.asMediaItem
 import app.vitune.android.utils.completed
 import app.vitune.android.utils.enqueue
@@ -62,6 +68,8 @@ import app.vitune.providers.innertube.requests.playlistPage
 import com.valentinilk.shimmer.shimmer
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.withContext
 
 @Composable
@@ -76,6 +84,8 @@ fun PlaylistSongList(
     val binder = LocalPlayerServiceBinder.current
     val context = LocalContext.current
     val menuState = LocalMenuState.current
+    val scope = rememberCoroutineScope()
+    var addingFavorites by remember { mutableStateOf(false) }
 
     var playlistPage by persist<Innertube.PlaylistOrAlbumPage?>("playlist/$browseId/playlistPage")
 
@@ -143,6 +153,35 @@ fun PlaylistSongList(
 
             playlistPage?.songsPage?.items?.map(Innertube.SongItem::asMediaItem)
                 ?.let { PlaylistDownloadIcon(songs = it.toImmutableList()) }
+
+            HeaderIconButton(
+                icon = R.drawable.ellipsis_horizontal,
+                color = colorPalette.text,
+                onClick = {
+                    menuState.display {
+                        Menu {
+                            MenuEntry(
+                                icon = R.drawable.heart,
+                                text = stringResource(R.string.playlist_add_all_favorites),
+                                enabled = !addingFavorites && playlistPage?.songsPage?.items?.isNotEmpty() == true && playlistPage?.songsPage?.continuation == null,
+                                onClick = {
+                                    menuState.hide()
+                                    val items = playlistPage?.songsPage?.items?.map(Innertube.SongItem::asMediaItem).orEmpty()
+                                    addingFavorites = true
+                                    scope.launch {
+                                        try {
+                                            val count = addPlaylistToFavorites(items)
+                                            context.toast(context.getString(R.string.playlist_favorites_added, count))
+                                        } catch (e: CancellationException) { throw e }
+                                        catch (_: Exception) { context.toast(context.getString(R.string.playlist_favorites_error)) }
+                                        finally { addingFavorites = false }
+                                    }
+                                }
+                            )
+                        }
+                    }
+                }
+            )
 
             HeaderIconButton(
                 icon = R.drawable.add,
