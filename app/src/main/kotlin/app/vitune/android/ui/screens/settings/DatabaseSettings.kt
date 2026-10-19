@@ -81,7 +81,6 @@ fun DatabaseSettings() = with(DataPreferences) {
     }
 
     SettingsCategoryScreen(title = stringResource(R.string.database)) {
-        WebRemoteSettings()
         SpotifyImportSettings()
 
         SettingsGroup(title = stringResource(R.string.cleanup)) {

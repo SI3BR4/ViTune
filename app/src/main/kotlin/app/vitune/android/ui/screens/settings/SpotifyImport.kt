@@ -11,6 +11,10 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.work.WorkManager
+import kotlinx.coroutines.flow.flowOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -21,14 +25,9 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import app.vitune.android.Database
 import app.vitune.android.R
-import app.vitune.android.internal
-import app.vitune.android.models.Playlist
-import app.vitune.android.models.SongPlaylistMap
 import app.vitune.android.ui.components.themed.DefaultDialog
 import app.vitune.android.ui.components.themed.DialogTextButton
-import app.vitune.android.utils.asMediaItem
 import app.vitune.android.utils.toast
 import app.vitune.core.ui.LocalAppearance
 import app.vitune.providers.innertube.Innertube
@@ -37,9 +36,6 @@ import app.vitune.providers.innertube.requests.searchPage
 import app.vitune.providers.innertube.utils.from
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
@@ -156,7 +152,7 @@ private fun songSeconds(text: String?): Long? {
     return parts.fold(0L) { total, part -> total * 60 + part }
 }
 
-private suspend fun findSpotifyTrack(track: SpotifyTrack): Innertube.SongItem? {
+internal suspend fun findSpotifyTrack(track: SpotifyTrack): Innertube.SongItem? {
     val songs = withTimeoutOrNull(20000L) {
         Innertube.searchPage(
             body = SearchBody(query = track.title + " " + track.artists.substringBefore(';'), params = Innertube.SearchFilter.Song.value),
@@ -175,20 +171,35 @@ fun SpotifyImportSettings() {
     val scope = rememberCoroutineScope()
     var csv by remember { mutableStateOf<List<SpotifyImportFile>?>(null) }
     var visible by remember { mutableStateOf(false) }
-    var running by remember { mutableStateOf(false) }
+    val workManager = remember { WorkManager.getInstance(context) }
+    var jobId by remember { mutableStateOf(SpotifyImportJobs.lastId(context)) }
+    val workInfo by remember(jobId) { jobId?.let { workManager.getWorkInfoByIdFlow(it) } ?: flowOf(null) }.collectAsState(initial = null)
+    val running = workInfo?.state?.isFinished == false
+    var starting by remember { mutableStateOf(false) }
     var reading by remember { mutableStateOf(false) }
     var status by remember { mutableStateOf("") }
     var failures by remember { mutableStateOf<List<String>>(emptyList()) }
-    var job by remember { mutableStateOf<Job?>(null) }
+
     val title = stringResource(R.string.spotify_import_title)
     val description = stringResource(R.string.spotify_import_description)
     val invalidFile = stringResource(R.string.spotify_import_invalid)
-    val progressFormat = stringResource(R.string.spotify_import_progress)
-    val summaryFormat = stringResource(R.string.spotify_import_summary)
     val cancelled = stringResource(R.string.spotify_import_cancelled)
-    val networkError = stringResource(R.string.spotify_import_network_error)
     val previewFormat = stringResource(R.string.spotify_import_preview)
     val pickerError = stringResource(R.string.no_file_chooser_installed)
+    LaunchedEffect(workInfo?.state, workInfo?.progress) {
+        val info = workInfo ?: return@LaunchedEffect
+        if (csv != null || reading) return@LaunchedEffect
+        if (info.state.isFinished) {
+            val result = withContext(Dispatchers.IO) {
+                SpotifyImportJobs.summary(context, info.id) to SpotifyImportJobs.failures(context, info.id)
+            }
+            status = result.first + if (info.state == androidx.work.WorkInfo.State.CANCELLED) "\n" + cancelled else ""
+            failures = result.second
+        } else {
+            status = info.progress.getString("status") ?: context.getString(R.string.spotify_import_waiting)
+            status += "\n" + context.getString(R.string.spotify_import_background)
+        }
+    }
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
         if (uris.isNotEmpty()) {
             reading = true
@@ -258,12 +269,17 @@ fun SpotifyImportSettings() {
             text = stringResource(R.string.spotify_export_description),
             onClick = { uriHandler.openUri("https://exportify.app/") }
         )
-        SettingsEntry(title = title, text = description, isEnabled = !running && !reading, onClick = {
+        if (workInfo != null) SettingsEntry(
+            title = stringResource(R.string.spotify_import_status),
+            text = if (running) stringResource(R.string.spotify_import_background) else status,
+            onClick = { csv = null; visible = true }
+        )
+        SettingsEntry(title = title, text = description, isEnabled = !running && !reading && !starting, onClick = {
             try { launcher.launch(arrayOf("*/*")) }
             catch (_: ActivityNotFoundException) { context.toast(pickerError) }
         })
     }
-    if (visible) DefaultDialog(onDismiss = { if (!running && !reading) visible = false }) {
+    if (visible) DefaultDialog(onDismiss = { if (!reading && !starting) visible = false }) {
         val (_, typography) = LocalAppearance.current
         BasicText(text = title, style = typography.s)
         Spacer(Modifier.height(12.dp))
@@ -279,78 +295,23 @@ fun SpotifyImportSettings() {
         }
         Spacer(Modifier.height(12.dp))
         val pending = csv
-        if (!running && !reading && pending != null) DialogTextButton(
+        if (!running && !reading && !starting && pending != null) DialogTextButton(
             text = stringResource(R.string.spotify_import_start), primary = true, onClick = {
                 csv = null
-                running = true
-                job = scope.launch {
-                    val total = pending.sumOf { it.csv.tracks.size }
-                    var imported = 0
-                    var existing = 0
-                    var processed = 0
-                    var errors = 0
-                    val missed = mutableListOf<String>()
-                    var reason = ""
+                starting = true
+                scope.launch {
                     try {
-                        files@ for (file in pending) {
-                            for (track in file.csv.tracks) {
-                                status = file.name + "\n" + String.format(progressFormat, processed + 1, total, track.title)
-                                try {
-                                    val outcome = withContext(Dispatchers.IO) {
-                                        val match = findSpotifyTrack(track)
-                                        if (match == null) 0 else {
-                                            val media = match.asMediaItem
-                                            if (file.playlistName == null) {
-                                                if (Database.song(media.mediaId).first()?.likedAt != null) 2 else {
-                                                Database.internal.runInTransaction {
-                                                    Database.insert(media)
-                                                    Database.like(media.mediaId, System.currentTimeMillis())
-                                                }
-                                                1
-                                                }
-                                            } else {
-                                                var added = false
-                                                Database.internal.runInTransaction {
-                                                    val id = Database.localPlaylistByName(file.playlistName)?.id
-                                                        ?: Database.insert(Playlist(name = file.playlistName))
-                                                    check(id > 0)
-                                                    if (!Database.playlistContainsSong(id, media.mediaId)) {
-                                                        Database.insert(media)
-                                                        Database.insert(SongPlaylistMap(songId = media.mediaId, playlistId = id,
-                                                            position = Database.lastPlaylistPosition(id) + 1))
-                                                        added = true
-                                                    }
-                                                }
-                                                if (added) 1 else 2
-                                            }
-                                        }
-                                    }
-                                    errors = 0
-                                    when (outcome) { 1 -> imported++; 2 -> existing++; else -> missed.add(file.name + ": " + track.title + " — " + track.artists) }
-                                } catch (e: CancellationException) { throw e }
-                                catch (_: Exception) {
-                                    errors++
-                                    missed.add(file.name + ": " + track.title + " — " + track.artists)
-                                    if (errors >= 3) { reason = networkError; break@files }
-                                    delay(2000)
-                                }
-                                processed++
-                                delay(350)
-                            }
-                        }
-                    } catch (_: CancellationException) { reason = cancelled }
-                    finally {
-                        failures = missed.toList()
-                        status = String.format(summaryFormat, imported, existing, missed.size, total - imported - existing - missed.size) +
-                            if (reason.isBlank()) "" else "\n" + reason
-                        running = false
-                    }
+                        jobId = SpotifyImportJobs.enqueue(context, pending)
+                        status = context.getString(R.string.spotify_import_background)
+                    } catch (e: CancellationException) { throw e }
+                    catch (_: Exception) { status = invalidFile }
+                    finally { starting = false }
                 }
             }
         )
-        if (!reading) DialogTextButton(
-            text = stringResource(if (running) R.string.cancel else R.string.done),
-            onClick = { if (running) job?.cancel() else visible = false }
-        )
+        if (running) DialogTextButton(text = stringResource(R.string.cancel), onClick = {
+            jobId?.let { workManager.cancelWorkById(it) }
+        })
+        if (!reading && !starting) DialogTextButton(text = stringResource(R.string.done), onClick = { visible = false })
     }
 }
