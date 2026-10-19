@@ -55,6 +55,7 @@ import app.vitune.android.ui.components.themed.SecondaryTextButton
 import app.vitune.android.ui.components.themed.TextFieldDialog
 import app.vitune.android.ui.items.SongItem
 import app.vitune.android.utils.PlaylistDownloadIcon
+import app.vitune.android.utils.addPlaylistToFavorites
 import app.vitune.android.utils.asMediaItem
 import app.vitune.android.utils.completed
 import app.vitune.android.utils.enqueue
@@ -98,6 +99,7 @@ fun LocalPlaylistSongs(
     val lazyListState = rememberLazyListState()
 
     var loading by remember { mutableStateOf(false) }
+    var addingFavorites by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         if (DataPreferences.autoSyncPlaylists) playlist.browseId?.let { browseId ->
@@ -190,6 +192,23 @@ fun LocalPlaylistSongs(
                                 onClick = {
                                     menuState.display {
                                         Menu {
+                                            MenuEntry(
+                                                icon = R.drawable.heart,
+                                                text = stringResource(R.string.playlist_add_all_favorites),
+                                                enabled = songs.isNotEmpty() && !addingFavorites && !loading,
+                                                onClick = {
+                                                    menuState.hide()
+                                                    addingFavorites = true
+                                                    coroutineScope.launch {
+                                                        try {
+                                                            val count = addPlaylistToFavorites(songs.map { it.asMediaItem })
+                                                            context.toast(context.getString(R.string.playlist_favorites_added, count))
+                                                        } catch (e: CancellationException) { throw e }
+                                                        catch (_: Exception) { context.toast(context.getString(R.string.playlist_favorites_error)) }
+                                                        finally { addingFavorites = false }
+                                                    }
+                                                }
+                                            )
                                             playlist.browseId?.let { browseId ->
                                                 MenuEntry(
                                                     icon = R.drawable.sync,
