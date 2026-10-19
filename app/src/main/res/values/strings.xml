@@ -382,17 +382,24 @@
         <item quantity="other">%1$d songs</item>
     </plurals>
     <string name="spotify_import_title">Import from Spotify</string>
-    <string name="spotify_import_description">Select one or more Exportify CSV files. liked.csv goes to Favorites; each other file goes to a playlist named after the file. Internet required. Keep this screen open. Up to 50 files, 20 MB combined and 10,000 songs per batch.</string>
+    <string name="spotify_import_description">Select one or more Exportify CSV files. liked.csv goes to Favorites; each other file goes to a playlist named after the file. Internet required. Importing continues in the background. Up to 50 files, 20 MB combined and 10,000 songs per batch.</string>
     <string name="spotify_import_invalid">Could not read this file. Select an Exportify CSV with Track Name and Artist Name(s) columns, up to 10 MB and 10,000 songs.</string>
     <string name="spotify_import_reading">Reading file…</string>
     <string name="spotify_import_preview">%1$d songs ready. %2$d duplicates and %3$d invalid rows skipped. Matched songs will be added to the destinations below, without automatically liking playlist songs.</string>
     <string name="spotify_import_progress">Searching %1$d of %2$d: %3$s</string>
     <string name="spotify_import_summary">Added: %1$d\nAlready in destination: %2$d\nUnmatched or failed: %3$d\nRemaining: %4$d</string>
     <string name="spotify_import_cancelled">Import cancelled. Songs already added are kept. You can import the same file again to continue.</string>
-    <string name="spotify_import_network_error">Stopped after repeated search errors. Check your connection and try importing the file again.</string>
+    <string name="spotify_import_network_error">Search failed repeatedly. The import will retry from the saved progress when possible.</string>
     <string name="spotify_import_unmatched">Unmatched songs or search errors:</string>
     <string name="spotify_import_start">Import selected files</string>
     <string name="spotify_export_title">Export Spotify liked songs</string>
     <string name="spotify_export_description">Open Exportify in your browser, sign in to Spotify and download your liked songs as CSV. Then return here to import the file.</string>
     <string name="spotify_import_skipped_files">Files skipped (invalid, unreadable or batch limit exceeded):</string>
+    <string name="playlist_add_all_favorites">Add all songs to Favorites</string>
+    <string name="playlist_favorites_added">%1$d songs added to Favorites. Existing favorites were kept.</string>
+    <string name="playlist_favorites_error">Could not add this playlist to Favorites.</string>
+    <string name="spotify_import_background">Importing in the background. You can leave this screen. Follow progress or cancel in the notification.</string>
+    <string name="spotify_import_waiting">Waiting for a connection or for Android to resume the import…</string>
+    <string name="spotify_import_status">Import progress / latest result</string>
+    <string name="spotify_import_finished">Import completed.</string>
 </resources>
