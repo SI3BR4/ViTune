@@ -9,8 +9,10 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.VisibilityThreshold
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.*
+import androidx.compose.runtime.CompositionLocalProvider
+import app.vitune.android.LocalPlayerAwareWindowInsets
+import app.vitune.core.ui.utils.isLandscape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
@@ -37,22 +39,7 @@ fun Scaffold(
     val (colorPalette) = LocalAppearance.current
     var hiddenTabs by UIStatePreferences.mutableTabStateOf(key)
 
-    Row(
-        modifier = modifier
-            .background(colorPalette.background0)
-            .fillMaxSize()
-    ) {
-        NavigationRail(
-            topIconButtonId = topIconButtonId,
-            onTopIconButtonClick = onTopIconButtonClick,
-            tabIndex = tabIndex,
-            onTabIndexChange = onTabChange,
-            hiddenTabs = hiddenTabs,
-            setHiddenTabs = { hiddenTabs = it.toImmutableList() },
-            tabsEditingTitle = tabsEditingTitle,
-            content = tabColumnContent
-        )
-
+    val body: @Composable () -> Unit = {
         AnimatedContent(
             targetState = tabIndex,
             transitionSpec = {
@@ -72,5 +59,36 @@ fun Scaffold(
             content = content,
             label = ""
         )
+    }
+    if (isLandscape) {
+        Row(
+            modifier = modifier
+                .background(colorPalette.background0)
+                .fillMaxSize()
+        ) {
+            NavigationRail(
+                topIconButtonId = topIconButtonId,
+                onTopIconButtonClick = onTopIconButtonClick,
+                tabIndex = tabIndex,
+                onTabIndexChange = onTabChange,
+                hiddenTabs = hiddenTabs,
+                setHiddenTabs = { hiddenTabs = it.toImmutableList() },
+                tabsEditingTitle = tabsEditingTitle,
+                content = tabColumnContent
+            )
+
+            body()
+        }
+    } else {
+        val insets = LocalPlayerAwareWindowInsets.current
+        Column(modifier.background(colorPalette.background0).fillMaxSize()) {
+            Box(Modifier.padding(insets.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal).asPaddingValues())) {
+                PortraitTabs(topIconButtonId, onTopIconButtonClick, tabIndex, onTabChange,
+                    hiddenTabs, { hiddenTabs = it.toImmutableList() }, tabsEditingTitle, tabColumnContent)
+            }
+            CompositionLocalProvider(LocalPlayerAwareWindowInsets provides insets.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal)) {
+                body()
+            }
+        }
     }
 }
