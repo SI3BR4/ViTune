@@ -27,6 +27,7 @@ import app.vitune.android.LocalPlayerServiceBinder
 import app.vitune.android.R
 import app.vitune.android.models.Song
 import app.vitune.android.preferences.DataPreferences
+import app.vitune.android.service.downloadState
 import app.vitune.android.ui.components.LocalMenuState
 import app.vitune.android.ui.components.themed.FloatingActionsContainerWithScrollToTop
 import app.vitune.android.ui.components.themed.Header
@@ -80,14 +81,15 @@ fun BuiltInPlaylistSongs(
             )
 
             BuiltInPlaylist.Offline ->
-                Database
-                    .songsWithContentLength(
+                combine(
+                    Database.songsWithContentLength(
                         sortBy = sortBy,
                         sortOrder = sortOrder
-                    )
-                    .map { songs ->
+                    ),
+                    downloadState
+                ) { songs, _ ->
                         songs.filter { binder?.isCached(it) ?: false }.map { it.song }
-                    }
+                }
 
             BuiltInPlaylist.Top -> combine(
                 flow = topListPeriodProperty.stateFlow,
