@@ -198,7 +198,7 @@ internal fun HomeToolbar(state: HomeNavigationState) {
         }
         BasicText(stringResource(if (state.destination == HomeDestination.Home) R.string.quick_picks else state.destination.title), style = typography.xxl.medium.copy(color = palette.text),
             modifier = Modifier.weight(1f).padding(horizontal = 8.dp))
-        NavigationIcon(R.drawable.search, stringResource(R.string.navigation_search)) { searchRoute.ensureGlobal("") }
+        NavigationIcon(R.drawable.search, stringResource(R.string.navigation_search)) { scope.launch { searchRoute.ensureGlobal("") } }
     }
 }
 
