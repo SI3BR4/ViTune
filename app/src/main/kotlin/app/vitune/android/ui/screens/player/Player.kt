@@ -43,6 +43,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
@@ -56,6 +58,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.coerceAtMost
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Dp
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
@@ -114,12 +117,16 @@ fun Player(
         topStart = 12.dp,
         topEnd = 12.dp
     ),
-    windowInsets: WindowInsets = WindowInsets.systemBars
+    windowInsets: WindowInsets = WindowInsets.systemBars,
+    collapsedBottomPadding: Dp = 0.dp
 ) = with(PlayerPreferences) {
     val menuState = LocalMenuState.current
     val [colorPalette, typography, thumbnailCornerSize] = LocalAppearance.current
     val binder = LocalPlayerServiceBinder.current
 
+    val previousDescription = stringResource(R.string.navigation_previous)
+    val nextDescription = stringResource(R.string.navigation_next)
+    val playPauseDescription = stringResource(R.string.navigation_play_pause)
     val pipHandler = rememberPipHandler()
 
     PersistMapCleanup(prefix = "queue/suggestions")
@@ -223,6 +230,7 @@ fun Player(
                     }
                     .then(innerModifier)
                     .padding(horizontalBottomPaddingValues)
+                    .padding(bottom = collapsedBottomPadding)
             ) {
                 Spacer(modifier = Modifier.width(2.dp))
 
@@ -292,7 +300,7 @@ fun Player(
                 Spacer(modifier = Modifier.width(2.dp))
 
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(0.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.height(Dimensions.items.collapsedPlayerHeight)
                 ) {
@@ -302,13 +310,16 @@ fun Player(
                             color = colorPalette.text,
                             onClick = { binder?.player?.forceSeekToPrevious() },
                             modifier = Modifier
-                                .padding(horizontal = 4.dp, vertical = 8.dp)
-                                .size(20.dp)
+                                .size(48.dp)
+                                .semantics { contentDescription = previousDescription }
+                                .padding(14.dp)
                         )
                     }
 
                     Box(
                         modifier = Modifier
+                            .size(48.dp)
+                            .semantics { contentDescription = playPauseDescription }
                             .clickable(
                                 onClick = {
                                     if (shouldBePlaying) binder?.player?.pause()
@@ -326,8 +337,7 @@ fun Player(
                             playing = shouldBePlaying,
                             modifier = Modifier
                                 .align(Alignment.Center)
-                                .padding(horizontal = 4.dp, vertical = 8.dp)
-                                .size(23.dp)
+                                .size(24.dp)
                         )
                     }
 
@@ -336,8 +346,9 @@ fun Player(
                         color = colorPalette.text,
                         onClick = { binder?.player?.forceSeekToNext() },
                         modifier = Modifier
-                            .padding(horizontal = 4.dp, vertical = 8.dp)
-                            .size(20.dp)
+                            .size(48.dp)
+                            .semantics { contentDescription = nextDescription }
+                            .padding(14.dp)
                     )
                 }
 
