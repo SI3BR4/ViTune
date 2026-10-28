@@ -108,6 +108,16 @@ internal fun HomeNavigationHost(
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val drawerWidth = minOf(340.dp, (maxWidth - 48.dp).coerceAtLeast(0.dp))
         val drawerWidthPx = with(density) { drawerWidth.toPx() }.coerceAtLeast(1f)
+        fun Modifier.drawerDrag(): Modifier = pointerInput(drawerWidthPx) {
+            detectHorizontalDragGestures(
+                onDragStart = { settleJob?.cancel() },
+                onDragCancel = { settleDrawer(state.drawerFraction >= 0.5f) },
+                onDragEnd = { settleDrawer(state.drawerFraction >= 0.5f) }
+            ) { change, amount ->
+                state.drawerFraction = (state.drawerFraction + amount / drawerWidthPx).coerceIn(0f, 1f)
+                change.consume()
+            }
+        }
         content()
         if (chromeVisible && !menuVisible) {
                 Column(Modifier.align(Alignment.BottomCenter).fillMaxWidth()
@@ -142,6 +152,13 @@ internal fun HomeNavigationHost(
                     }
                 }
         }
+        // Keep Android's Back region free while allowing drags along the rest of the left edge.
+        if (chromeVisible && !menuVisible && state.destination == HomeDestination.Home && state.homeRootVisible) {
+            val gestureLeft = with(density) { WindowInsets.systemGestures.getLeft(density, LocalLayoutDirection.current).toDp() }
+            Box(Modifier.align(Alignment.CenterStart).padding(start = gestureLeft)
+                .padding(top = state.toolbarHeight, bottom = state.barHeight + 96.dp)
+                .width(24.dp).fillMaxHeight().drawerDrag())
+        }
         if (state.drawerFraction > 0f && chromeVisible && !menuVisible) {
             Box(Modifier.fillMaxSize()
                 .background(palette.background0.copy(alpha = 0.65f * state.drawerFraction))
@@ -150,7 +167,7 @@ internal fun HomeNavigationHost(
                 drawerContainerColor = palette.background1,
                 drawerContentColor = palette.text,
                 modifier = Modifier.offset { IntOffset((drawerWidthPx * (state.drawerFraction - 1f)).roundToInt(), 0) }
-                    .width(drawerWidth).fillMaxHeight()
+                    .width(drawerWidth).fillMaxHeight().drawerDrag()
             ) {
                 Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(12.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -187,16 +204,7 @@ internal fun HomeNavigationHost(
                 .padding(start = if (state.drawerFraction == 0f) gestureLeft else 0.dp)
                 .size(width = 48.dp, height = 80.dp)
                 .semantics { contentDescription = openMenuLabel }
-                .pointerInput(drawerWidthPx) {
-                    detectHorizontalDragGestures(
-                        onDragStart = { settleJob?.cancel() },
-                        onDragCancel = { settleDrawer(state.drawerFraction >= 0.5f) },
-                        onDragEnd = { settleDrawer(state.drawerFraction >= 0.5f) }
-                    ) { change, amount ->
-                        state.drawerFraction = (state.drawerFraction + amount / drawerWidthPx).coerceIn(0f, 1f)
-                        change.consume()
-                    }
-                }, contentAlignment = Alignment.CenterStart) {
+                .drawerDrag(), contentAlignment = Alignment.CenterStart) {
                 Box(Modifier.width(20.dp).height(72.dp)
                     .background(palette.background2, RoundedCornerShape(topEnd = 10.dp, bottomEnd = 10.dp)),
                     contentAlignment = Alignment.Center) {
