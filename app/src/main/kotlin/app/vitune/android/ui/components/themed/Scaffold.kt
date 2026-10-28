@@ -81,12 +81,16 @@ fun Scaffold(
         }
     } else {
         val insets = LocalPlayerAwareWindowInsets.current
+        val currentTitle = TabsBuilder.rememberTabs(tabColumnContent).getOrNull(tabIndex)?.title?.invoke()
         Column(modifier.background(colorPalette.background0).fillMaxSize()) {
             Box(Modifier.padding(insets.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal).asPaddingValues())) {
                 PortraitTabs(topIconButtonId, onTopIconButtonClick, tabIndex, onTabChange,
                     hiddenTabs, { hiddenTabs = it.toImmutableList() }, tabsEditingTitle, tabColumnContent)
             }
-            CompositionLocalProvider(LocalPlayerAwareWindowInsets provides insets.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal)) {
+            CompositionLocalProvider(
+                LocalPlayerAwareWindowInsets provides insets.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal),
+                LocalScreenHeading provides currentTitle
+            ) {
                 body()
             }
         }

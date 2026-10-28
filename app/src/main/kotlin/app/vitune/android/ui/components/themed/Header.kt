@@ -27,20 +27,25 @@ import kotlin.random.Random
 fun Header(
     title: String,
     modifier: Modifier = Modifier,
-    actionsContent: @Composable RowScope.() -> Unit = {}
-) = Header(
-    modifier = modifier,
-    titleContent = {
-        FadingRow {
-            BasicText(
-                text = title,
-                style = LocalAppearance.current.typography.xxl.medium,
-                maxLines = 1
-            )
-        }
-    },
-    actionsContent = actionsContent
-)
+    actionsContent: (@Composable RowScope.() -> Unit)? = null
+) {
+    if (LocalScreenHeading.current == title) {
+        if (actionsContent != null) Row(
+            modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp).heightIn(min = 48.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            content = actionsContent
+        )
+    } else Header(
+        modifier = modifier,
+        titleContent = {
+            FadingRow {
+                BasicText(text = title, style = LocalAppearance.current.typography.xxl.medium, maxLines = 1)
+            }
+        },
+        actionsContent = actionsContent ?: {}
+    )
+}
 
 @Composable
 fun Header(

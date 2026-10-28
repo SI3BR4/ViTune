@@ -139,7 +139,7 @@ private fun BoxScope.FloatingActions(
         }
     }
 
-    icon?.let {
+    icon?.takeUnless { it == R.drawable.search && LocalScreenSearchAvailable.current }?.let {
         onClick?.let {
             transition.AnimatedVisibility(
                 visible = { it?.isScrollingDown == false },
