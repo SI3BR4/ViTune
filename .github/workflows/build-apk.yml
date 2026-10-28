@@ -31,9 +31,34 @@ jobs:
         run: |
           set -o pipefail
           java -classpath gradle/wrapper/gradle-wrapper.jar org.gradle.wrapper.GradleWrapperMain :app:testDebugUnitTest :app:assembleDebug --no-daemon --stacktrace 2>&1 | tee build-apk.log
+      - name: Habilitar aceleracao do emulador
+        run: |
+          sudo chmod 666 /dev/kvm
+      - name: Testar navegacao no Android
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          profile: pixel_2
+          disable-animations: true
+          script: |
+            adb shell wm size 720x1600
+            adb shell wm density 320
+            java -classpath gradle/wrapper/gradle-wrapper.jar org.gradle.wrapper.GradleWrapperMain :app:connectedDebugAndroidTest --no-daemon --stacktrace
+            adb pull /sdcard/Android/data/app.vitune.android.debug/files/navigation-regression navigation-screenshots
+      - name: Guardar verificacao visual
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: navegacao-testes-e-imagens
+          path: |
+            navigation-screenshots/
+            app/build/reports/androidTests/
+            app/build/outputs/androidTest-results/
+          if-no-files-found: ignore
       - uses: actions/upload-artifact@v4
         with:
-          name: ViTune-Spotify-CSV-APK
+          name: ViTune-Navegacao-Corrigida-APK
           path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
           retention-days: 14
