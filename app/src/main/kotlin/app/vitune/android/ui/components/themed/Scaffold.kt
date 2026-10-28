@@ -3,7 +3,6 @@ package app.vitune.android.ui.components.themed
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedContentTransitionScope.SlideDirection.Companion.Down
 import androidx.compose.animation.AnimatedContentTransitionScope.SlideDirection.Companion.Up
-import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ContentTransform
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.VisibilityThreshold
@@ -34,13 +33,16 @@ fun Scaffold(
     tabColumnContent: TabsBuilder.() -> Unit,
     modifier: Modifier = Modifier,
     tabsEditingTitle: String = stringResource(R.string.tabs),
-    content: @Composable AnimatedVisibilityScope.(Int) -> Unit
+    animateTabs: Boolean = true,
+    content: @Composable (Int) -> Unit
 ) {
     val (colorPalette) = LocalAppearance.current
     var hiddenTabs by UIStatePreferences.mutableTabStateOf(key)
 
     val body: @Composable () -> Unit = {
-        AnimatedContent(
+        if (!animateTabs) {
+            content(tabIndex)
+        } else AnimatedContent(
             targetState = tabIndex,
             transitionSpec = {
                 val slideDirection = if (targetState > initialState) Up else Down
@@ -56,7 +58,7 @@ fun Scaffold(
                     sizeTransform = null
                 )
             },
-            content = content,
+            content = { content(it) },
             label = ""
         )
     }
