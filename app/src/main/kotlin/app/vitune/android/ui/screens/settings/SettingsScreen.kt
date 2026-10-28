@@ -71,6 +71,7 @@ fun SettingsScreen(onBack: (() -> Unit)? = null) {
         Content {
             Scaffold(
                 key = "settings",
+                animateTabs = false,
                 topIconButtonId = R.drawable.chevron_back,
                 onTopIconButtonClick = onBack ?: pop,
                 tabIndex = tabIndex,
