@@ -86,6 +86,15 @@ class NavigationRegressionTest {
             val openBounds = openHandle.visibleBounds
             device.swipe(openBounds.centerX(), openBounds.centerY(), 30, openBounds.centerY(), 35)
             assertTrue("Drawer did not close on drag", device.wait(Until.gone(By.text("Sua biblioteca")), 5000))
+            // Open from the edge away from the handle, and close from the middle of the sheet.
+            val edgeHandle = requireNotNull(device.wait(Until.findObject(By.desc("Abrir menu lateral")), 5000))
+            val edgeX = (edgeHandle.visibleBounds.centerX() - 12).coerceAtLeast(2)
+            val edgeY = device.displayHeight / 3
+            device.swipe(edgeX, edgeY, device.displayWidth - 12, edgeY, 35)
+            assertTrue("Drawer did not open from edge", device.wait(Until.hasObject(By.text("Sua biblioteca")), 5000))
+            device.waitForIdle(500)
+            device.swipe(device.displayWidth / 2, device.displayHeight / 2, 10, device.displayHeight / 2, 35)
+            assertTrue("Drawer did not close from middle", device.wait(Until.gone(By.text("Sua biblioteca")), 5000))
             openDrawerFromHome()
             requireNotNull(device.findObject(By.text("Playlists"))).click()
             assertTrue(device.wait(Until.hasObject(By.text(context.getString(R.string.new_playlist))), 5000))
