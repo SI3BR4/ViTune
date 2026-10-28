@@ -401,4 +401,19 @@
     <string name="spotify_import_waiting">Aguardando conexão ou retomada pelo Android…</string>
     <string name="spotify_import_status">Progresso / resultado da importação</string>
     <string name="spotify_import_finished">Importação concluída.</string>
+    <string name="navigation_home">Início</string>
+    <string name="navigation_explore">Explorar</string>
+    <string name="navigation_downloads">Downloads</string>
+    <string name="navigation_settings">Configurações</string>
+    <string name="navigation_local">Músicas locais</string>
+    <string name="navigation_library">Sua biblioteca</string>
+    <string name="navigation_open_menu">Abrir menu lateral</string>
+    <string name="navigation_close_menu">Fechar menu lateral</string>
+    <string name="navigation_search">Buscar</string>
+    <string name="navigation_previous">Faixa anterior</string>
+    <string name="navigation_next">Próxima faixa</string>
+    <string name="navigation_play_pause">Reproduzir ou pausar</string>
+    <string name="navigation_back">Voltar</string>
+    <string name="navigation_downloaded_by_app">Baixadas pelo ViTune</string>
+    <string name="navigation_available_offline">Disponíveis offline</string>
 </resources>
