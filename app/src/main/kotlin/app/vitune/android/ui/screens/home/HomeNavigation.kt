@@ -105,8 +105,6 @@ internal fun HomeNavigationHost(
     BackHandler(enabled = state.destination != HomeDestination.Home && state.drawerFraction == 0f) {
         state.select(HomeDestination.Home)
     }
-    BackHandler(enabled = state.drawerFraction > 0f) { settleDrawer(false) }
-
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val drawerWidth = minOf(340.dp, (maxWidth - 48.dp).coerceAtLeast(0.dp))
         val drawerWidthPx = with(density) { drawerWidth.toPx() }.coerceAtLeast(1f)
@@ -208,6 +206,8 @@ internal fun HomeNavigationHost(
             }
         }
     }
+    // Register after nested route handlers so Back closes an open drawer first.
+    BackHandler(enabled = state.drawerFraction > 0f) { settleDrawer(false) }
 }
 
 @Composable
