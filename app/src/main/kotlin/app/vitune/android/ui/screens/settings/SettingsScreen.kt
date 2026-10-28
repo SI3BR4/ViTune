@@ -39,6 +39,7 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import app.vitune.android.LocalPlayerAwareWindowInsets
 import app.vitune.android.R
+import app.vitune.android.ui.components.themed.LocalScreenHeading
 import app.vitune.android.ui.components.themed.Header
 import app.vitune.android.ui.components.themed.NumberFieldDialog
 import app.vitune.android.ui.components.themed.Scaffold
@@ -346,7 +347,7 @@ fun SettingsCategoryScreen(
                     .asPaddingValues()
             )
     ) {
-        Header(title = title) {
+        if (LocalScreenHeading.current != title) Header(title = title) {
             description?.let { description ->
                 BasicText(
                     text = description,
@@ -354,6 +355,8 @@ fun SettingsCategoryScreen(
                 )
                 SettingsGroupSpacer()
             }
+        } else description?.let {
+            BasicText(it, style = typography.s.secondary, modifier = Modifier.padding(16.dp))
         }
 
         content()
