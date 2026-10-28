@@ -166,8 +166,9 @@ internal fun HomeNavigationHost(
             ModalDrawerSheet(
                 drawerContainerColor = palette.background1,
                 drawerContentColor = palette.text,
-                modifier = Modifier.offset { IntOffset((drawerWidthPx * (state.drawerFraction - 1f)).roundToInt(), 0) }
-                    .width(drawerWidth).fillMaxHeight().drawerDrag()
+                modifier = Modifier.drawerDrag()
+                    .offset { IntOffset((drawerWidthPx * (state.drawerFraction - 1f)).roundToInt(), 0) }
+                    .width(drawerWidth).fillMaxHeight()
             ) {
                 Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(12.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
