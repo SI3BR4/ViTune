@@ -56,8 +56,8 @@ internal enum class HomeDestination(val id: Int, val title: Int, val icon: Int) 
     Offline(11, R.string.offline, R.drawable.airplane);
 
     companion object {
-        val primary = listOf(Home, Explore, Downloads, Settings)
-        val library = listOf(History, Favorites, Playlists, Offline, Artists, Albums, Local)
+        val primary = listOf(Home, Explore, Offline, Settings)
+        val library = listOf(History, Favorites, Playlists, Artists, Albums, Local)
     }
 }
 
