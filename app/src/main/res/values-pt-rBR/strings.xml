@@ -330,6 +330,7 @@
     <string name="reset_blacklist">Redefinir lista negra</string>
     <string name="blacklist_empty">Lista negra vazia</string>
     <string name="pre_cache">Pré-Download</string>
+    <string name="pre_cache_requested">Solicitando download…</string>
     <string name="swipe_to_hide_song">Deslizar para ocultar música</string>
     <string name="swipe_to_hide_song_description">Quando você desliza uma música para a esquerda, ela é removida do banco de dados e dos downloads</string>
     <string name="swipe_to_hide_song_confirm">Confirmar deslizar para ocultar música</string>
