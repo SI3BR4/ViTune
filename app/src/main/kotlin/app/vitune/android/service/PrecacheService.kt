@@ -4,6 +4,8 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.ServiceConnection
 import android.os.IBinder
+import android.os.Handler
+import android.os.Looper
 import androidx.annotation.OptIn
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
@@ -28,6 +30,7 @@ import app.vitune.android.utils.download
 import app.vitune.android.utils.intent
 import app.vitune.android.utils.toast
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
@@ -45,11 +48,10 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withTimeout
 import java.io.File
 import java.util.NavigableSet
 import java.util.concurrent.Executors
-import kotlin.coroutines.resume
 import kotlin.time.Duration.Companion.milliseconds
 
 private val executor = Executors.newCachedThreadPool()
@@ -86,22 +88,18 @@ class PrecacheService : DownloadService(
 
     private val notificationActionReceiver = NotificationActionReceiver()
 
-    private val waiters = mutableListOf<() -> Unit>()
+    private val playerReady = CompletableDeferred<PlayerService.Binder>()
 
     private val serviceConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             if (service !is PlayerService.Binder) return
             bound = true
-            binder = service
-            waiters.forEach { it() }
-            waiters.clear()
+            playerReady.complete(service)
         }
 
         override fun onServiceDisconnected(name: ComponentName?) {
             bound = false
-            binder = null
-            waiters.forEach { it() }
-            waiters.clear()
+            playerReady.completeExceptionally(IllegalStateException("Player service disconnected"))
         }
     }
 
@@ -126,7 +124,6 @@ class PrecacheService : DownloadService(
     @get:Synchronized
     @set:Synchronized
     private var bound = false
-    private var binder: PlayerService.Binder? = null
 
     private var progressUpdaterJob: Job? = null
 
@@ -141,20 +138,17 @@ class PrecacheService : DownloadService(
     override fun getDownloadManager(): DownloadManager {
         runCatching {
             if (bound) unbindService(serviceConnection)
-            bindService(intent<PlayerService>(), serviceConnection, BIND_AUTO_CREATE)
+            check(bindService(intent<PlayerService>(), serviceConnection, BIND_AUTO_CREATE)) {
+                "Could not bind to player service"
+            }
         }.exceptionOrNull()?.let {
+            playerReady.completeExceptionally(it)
             it.printStackTrace()
             toast(getString(R.string.error_pre_cache))
         }
 
         val cache = BlockingDeferredCache {
-            suspendCancellableCoroutine {
-                waiters += { it.resume(Unit) }
-            }
-            binder?.cache ?: run {
-                toast(getString(R.string.error_pre_cache))
-                error("PlayerService failed to start, crashing...")
-            }
+            withTimeout(15_000) { playerReady.await().cache }
         }
 
         progressUpdaterJob?.cancel()
@@ -192,7 +186,12 @@ class PrecacheService : DownloadService(
                         downloadManager: DownloadManager,
                         download: Download,
                         finalException: Exception?
-                    ) = downloadQueue.trySend(downloadManager).let { }
+                    ) {
+                        downloadQueue.trySend(downloadManager)
+                        if (download.state == Download.STATE_FAILED) {
+                            Handler(Looper.getMainLooper()).post { toast(getString(R.string.error_pre_cache)) }
+                        }
+                    }
 
                     override fun onDownloadRemoved(
                         downloadManager: DownloadManager,
@@ -258,6 +257,9 @@ class PrecacheService : DownloadService(
             transaction {
                 runCatching {
                     Database.insert(mediaItem)
+                }.onFailure {
+                    it.printStackTrace()
+                    Handler(Looper.getMainLooper()).post { context.toast(context.getString(R.string.error_pre_cache)) }
                 }.also { if (it.isFailure) return@transaction }
 
                 coroutineScope.launch {
