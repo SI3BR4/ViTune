@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -25,6 +26,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import app.vitune.android.Database
 import app.vitune.android.LocalPlayerAwareWindowInsets
 import app.vitune.android.LocalPlayerServiceBinder
@@ -36,7 +38,7 @@ import app.vitune.android.transaction
 import app.vitune.android.ui.components.LocalMenuState
 import app.vitune.android.ui.components.ShimmerHost
 import app.vitune.android.ui.components.themed.FloatingActionsContainerWithScrollToTop
-import app.vitune.android.ui.components.themed.Header
+import app.vitune.android.ui.components.themed.CompactPlaylistHeader
 import app.vitune.android.ui.components.themed.HeaderIconButton
 import app.vitune.android.ui.components.themed.Menu
 import app.vitune.android.ui.components.themed.MenuEntry
@@ -136,8 +138,8 @@ fun PlaylistSongList(
     )
 
     val headerContent: @Composable () -> Unit = {
-        if (playlistPage == null) HeaderPlaceholder(modifier = Modifier.shimmer())
-        else Header(title = playlistPage?.title ?: stringResource(R.string.unknown)) {
+        if (playlistPage == null) HeaderPlaceholder(modifier = Modifier.height(88.dp).shimmer())
+        else CompactPlaylistHeader(title = playlistPage?.title ?: stringResource(R.string.unknown)) {
             SecondaryTextButton(
                 text = stringResource(R.string.enqueue),
                 enabled = playlistPage?.songsPage?.items?.isNotEmpty() == true,
