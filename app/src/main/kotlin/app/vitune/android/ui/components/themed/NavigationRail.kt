@@ -235,7 +235,7 @@ inline fun NavigationRail(
             .verticalScroll(rememberScrollState())
             .padding(paddingValues)
     ) {
-        Box(
+        if (showTopIcon) Box(
             contentAlignment = Alignment.TopCenter,
             modifier = Modifier
                 .size(

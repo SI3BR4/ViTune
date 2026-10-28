@@ -34,6 +34,7 @@ fun Scaffold(
     modifier: Modifier = Modifier,
     tabsEditingTitle: String = stringResource(R.string.tabs),
     animateTabs: Boolean = true,
+    showTopIcon: Boolean = true,
     content: @Composable (Int) -> Unit
 ) {
     val (colorPalette) = LocalAppearance.current
@@ -69,6 +70,7 @@ fun Scaffold(
                 .fillMaxSize()
         ) {
             NavigationRail(
+                showTopIcon = showTopIcon,
                 topIconButtonId = topIconButtonId,
                 onTopIconButtonClick = onTopIconButtonClick,
                 tabIndex = tabIndex,
@@ -87,7 +89,7 @@ fun Scaffold(
         Column(modifier.background(colorPalette.background0).fillMaxSize()) {
             Box(Modifier.padding(insets.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal).asPaddingValues())) {
                 PortraitTabs(topIconButtonId, onTopIconButtonClick, tabIndex, onTabChange,
-                    hiddenTabs, { hiddenTabs = it.toImmutableList() }, tabsEditingTitle, tabColumnContent)
+                    hiddenTabs, { hiddenTabs = it.toImmutableList() }, tabsEditingTitle, showTopIcon, tabColumnContent)
             }
             CompositionLocalProvider(
                 LocalPlayerAwareWindowInsets provides insets.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal),

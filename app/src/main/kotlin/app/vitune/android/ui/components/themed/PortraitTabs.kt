@@ -32,6 +32,7 @@ internal fun PortraitTabs(
     hiddenTabs: ImmutableList<String>,
     onHiddenTabsChange: (List<String>) -> Unit,
     editingTitle: String,
+    showTopIcon: Boolean,
     content: TabsBuilder.() -> Unit
 ) {
     val (palette, typography) = LocalAppearance.current
@@ -54,7 +55,7 @@ internal fun PortraitTabs(
     }
     Row(Modifier.fillMaxWidth().background(palette.background0),
         verticalAlignment = Alignment.CenterVertically) {
-        Box(Modifier.size(48.dp).combinedClickable(role = Role.Button, onClick = onTopClick),
+        if (showTopIcon) Box(Modifier.size(48.dp).combinedClickable(role = Role.Button, onClick = onTopClick),
             contentAlignment = Alignment.Center) {
             Image(painterResource(topIcon), stringResource(R.string.navigation_back),
                 colorFilter = ColorFilter.tint(palette.text), modifier = Modifier.size(24.dp))
