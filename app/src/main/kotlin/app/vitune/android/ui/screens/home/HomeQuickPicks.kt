@@ -81,7 +81,8 @@ fun QuickPicks(
     onAlbumClick: (Innertube.AlbumItem) -> Unit,
     onArtistClick: (Innertube.ArtistItem) -> Unit,
     onPlaylistClick: (Innertube.PlaylistItem) -> Unit,
-    onSearchClick: () -> Unit
+    onSearchClick: () -> Unit,
+    showHeader: Boolean = true
 ) {
     val (colorPalette, typography) = LocalAppearance.current
     val binder = LocalPlayerServiceBinder.current
@@ -167,7 +168,7 @@ fun QuickPicks(
                         .asPaddingValues()
                 )
         ) {
-            Header(
+            if (showHeader) Header(
                 title = stringResource(R.string.quick_picks),
                 modifier = Modifier.padding(endPaddingValues)
             )

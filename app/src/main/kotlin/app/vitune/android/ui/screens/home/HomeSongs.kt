@@ -7,6 +7,8 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
@@ -119,7 +121,13 @@ fun HomeSongs(
     setSortBy: (SongSortBy) -> Unit,
     sortOrder: SortOrder,
     setSortOrder: (SortOrder) -> Unit,
-    title: String
+    title: String,
+    persistKey: String = "home/songs",
+    showHeaderTitle: Boolean = true,
+    headerDescription: String? = null,
+    headerDetail: String? = null,
+    showDuration: Boolean = true,
+    songTrailingContent: (@Composable (Song) -> Unit)? = null
 ) {
     val [colorPalette, typography, _, thumbnailShape] = LocalAppearance.current
 
@@ -129,7 +137,7 @@ fun HomeSongs(
     val keyboardController = LocalSoftwareKeyboardController.current
 
     var filter: String? by rememberSaveable { mutableStateOf(null) }
-    var items by persistList<Song>("home/songs")
+    var items by persistList<Song>(persistKey)
     val filteredItems by remember {
         derivedStateOf {
             filter?.lowercase()?.ifBlank { null }?.let { f ->
@@ -164,7 +172,7 @@ fun HomeSongs(
                 key = "header",
                 contentType = 0
             ) {
-                Header(title = title) {
+                CollectionHeader(title, showHeaderTitle, headerDescription, headerDetail) {
                     var searching by rememberSaveable { mutableStateOf(false) }
 
                     AnimatedContent(
@@ -279,6 +287,8 @@ fun HomeSongs(
                             } else it
                         },
                     song = song,
+                    showDuration = showDuration,
+                    trailingContent = if (songTrailingContent != null) { { songTrailingContent(song) } } else null,
                     thumbnailSize = Dimensions.thumbnails.song,
                     onThumbnailContent = if (sortBy == SongSortBy.PlayTime) {
                         {
@@ -312,6 +322,36 @@ fun HomeSongs(
             lazyListState = lazyListState,
             icon = R.drawable.search,
             onClick = onSearchClick
+        )
+    }
+}
+
+
+@Composable
+private fun CollectionHeader(
+    title: String,
+    showTitle: Boolean,
+    description: String?,
+    detail: String?,
+    actions: @Composable RowScope.() -> Unit
+) {
+    val (palette, typography) = LocalAppearance.current
+    Column {
+        if (description != null) BasicText(
+            text = description,
+            style = typography.s.semiBold.copy(color = palette.text),
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
+        )
+        if (detail != null) BasicText(
+            text = detail,
+            style = typography.xs.copy(color = palette.textSecondary),
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+        )
+        if (showTitle) Header(title = title, actionsContent = actions)
+        else Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).padding(horizontal = 16.dp),
+            content = actions
         )
     }
 }
