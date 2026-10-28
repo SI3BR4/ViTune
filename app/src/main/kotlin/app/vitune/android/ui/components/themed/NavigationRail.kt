@@ -184,6 +184,7 @@ inline fun NavigationRail(
     crossinline setHiddenTabs: (List<String>) -> Unit,
     modifier: Modifier = Modifier,
     tabsEditingTitle: String = stringResource(R.string.tabs),
+    showTopIcon: Boolean = true,
     crossinline content: TabsBuilder.() -> Unit
 ) {
     val (colorPalette, typography) = LocalAppearance.current
