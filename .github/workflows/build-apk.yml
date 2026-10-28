@@ -45,7 +45,7 @@ jobs:
             adb shell wm size 720x1600
             adb shell wm density 320
             java -classpath gradle/wrapper/gradle-wrapper.jar org.gradle.wrapper.GradleWrapperMain :app:connectedDebugAndroidTest --no-daemon --stacktrace
-            adb pull /sdcard/Android/data/app.vitune.android.debug/files/navigation-regression navigation-screenshots
+            adb pull /data/local/tmp/vitune-navigation navigation-screenshots
       - name: Resumir diagnostico dos testes
         if: always()
         run: |
