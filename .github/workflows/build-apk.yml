@@ -45,13 +45,14 @@ jobs:
             adb shell wm size 720x1600
             adb shell wm density 320
             java -classpath gradle/wrapper/gradle-wrapper.jar org.gradle.wrapper.GradleWrapperMain :app:connectedDebugAndroidTest --no-daemon --stacktrace
-            adb pull /data/local/tmp/vitune-navigation navigation-screenshots
+            adb pull /data/local/tmp/vitune-navigation navigation-screenshots || true
       - name: Resumir diagnostico dos testes
         if: always()
         run: |
           python - <<'PY'
           from pathlib import Path
           import xml.etree.ElementTree as ET
+          import re
           known = {
               "INSTALL_FAILED_OLDER_SDK": "DEVICE_SDK_TOO_OLD",
               "INSTALL_FAILED_NO_MATCHING_ABIS": "DEVICE_ABI_MISMATCH",
@@ -89,6 +90,8 @@ jobs:
                   text = element.get("message", "") + " " + (element.text or "")
                   codes = sorted({code for phrase, code in known.items() if phrase in text})
                   print("DIAGNOSTIC_CODES", ",".join(codes) if codes else "UNCLASSIFIED_TEST_FAILURE")
+                  positions = sorted({int(line) for line in re.findall(r"NavigationRegressionTest\.kt:([0-9]+)", text)})
+                  print("PUBLIC_TEST_SOURCE_LINES", positions)
           PY
       - name: Guardar verificacao visual
         if: always()
