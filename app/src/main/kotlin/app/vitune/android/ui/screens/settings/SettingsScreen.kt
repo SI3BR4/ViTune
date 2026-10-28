@@ -58,7 +58,7 @@ import kotlinx.collections.immutable.toImmutableList
 
 @Route
 @Composable
-fun SettingsScreen() {
+fun SettingsScreen(onBack: (() -> Unit)? = null) {
     val saveableStateHolder = rememberSaveableStateHolder()
     val [tabIndex, onTabChanged] = rememberSaveable { mutableIntStateOf(0) }
 
@@ -71,7 +71,7 @@ fun SettingsScreen() {
             Scaffold(
                 key = "settings",
                 topIconButtonId = R.drawable.chevron_back,
-                onTopIconButtonClick = pop,
+                onTopIconButtonClick = onBack ?: pop,
                 tabIndex = tabIndex,
                 onTabChange = onTabChanged,
                 tabColumnContent = {
