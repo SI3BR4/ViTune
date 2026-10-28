@@ -54,7 +54,7 @@ class NavigationRegressionTest {
                 requireNotNull(device.findObject(By.text("Aparência"))).click()
                 assertTrue("Appearance settings failed to return", device.wait(Until.hasObject(By.text(context.getString(R.string.color_source))), 5000))
                 tab("Configurações") // reselecting the current tab must be safe
-                tab("Downloads")
+                tab("Offline")
                 tab("Explorar")
                 tab("Início")
             }
@@ -82,6 +82,8 @@ class NavigationRegressionTest {
             }
             openDrawerFromHome()
             assertFalse("Removed songs entry still visible", device.hasObject(By.text("Músicas")))
+            assertTrue("Offline still visible in drawer", device.findObjects(By.text("Offline"))
+                .none { it.visibleBounds.centerY() < device.displayHeight * 3 / 4 })
             val openHandle = requireNotNull(device.wait(Until.findObject(By.desc("Abrir menu lateral")), 5000))
             val openBounds = openHandle.visibleBounds
             device.swipe(openBounds.centerX(), openBounds.centerY(), 30, openBounds.centerY(), 35)
@@ -103,8 +105,7 @@ class NavigationRegressionTest {
             assertFalse("Offline displayed among playlists", device.hasObject(By.text("Offline")))
             assertFalse("History displayed among playlists", device.hasObject(By.text("Histórico")))
             assertFalse("Top playlist displayed", device.hasObject(By.textContains("Meu top")))
-            openDrawerFromHome()
-            requireNotNull(device.findObject(By.text("Offline"))).click()
+            tab("Offline")
             assertTrue("Offline screen did not open", device.wait(Until.hasObject(By.text("Offline")), 5000))
             assertTrue("Handle visible in offline", device.wait(Until.gone(By.desc("Abrir menu lateral")), 5000))
             openDrawerFromHome()
@@ -114,7 +115,7 @@ class NavigationRegressionTest {
 
             device.executeShellCommand("settings put system font_scale 1.5")
             try {
-                tab("Downloads")
+                tab("Offline")
                 tab("Configurações")
                 val nav = requireNotNull(device.wait(Until.findObject(By.desc("Configurações")), 10000))
                 val labels = device.findObjects(By.text("Configurações"))
