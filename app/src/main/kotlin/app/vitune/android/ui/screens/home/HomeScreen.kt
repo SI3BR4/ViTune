@@ -30,6 +30,7 @@ import app.vitune.android.ui.screens.pipedPlaylistRoute
 import app.vitune.android.ui.screens.playlistRoute
 import app.vitune.android.ui.screens.searchRoute
 import app.vitune.compose.persist.PersistMapCleanup
+import app.vitune.compose.routing.Route as NavigationRoute
 import app.vitune.compose.routing.Route0
 import app.vitune.compose.routing.RouteHandler
 
@@ -44,6 +45,10 @@ internal fun HomeScreen(navigation: HomeNavigationState) {
 
     RouteHandler {
             SideEffect { navigation.closeRoute = { replace(null) } }
+            fun openHomeRoute(route: NavigationRoute, vararg parameters: Any?) {
+                parameters.forEachIndexed { index, value -> args[index] = value }
+                replace(route)
+            }
             GlobalRoutes()
     
             localPlaylistRoute { playlistId ->
@@ -82,57 +87,48 @@ internal fun HomeScreen(navigation: HomeNavigationState) {
                     ) {
                         val currentTabIndex = navigation.destination.id
                         saveableStateHolder.SaveableStateProvider(key = currentTabIndex) {
-                            val onSearchClick = { searchRoute("") }
+                            val onSearchClick = { openHomeRoute(searchRoute, "") }
                             when (currentTabIndex) {
                                 7 -> BuiltInPlaylistSongs(BuiltInPlaylist.History)
                                 8 -> BuiltInPlaylistSongs(BuiltInPlaylist.Favorites)
                                 9 -> HomeDownloads(onSearchClick)
                                 10 -> SettingsScreen(onBack = { navigation.select(HomeDestination.Home) })
                                 0 -> QuickPicks(
-                                    onAlbumClick = { albumRoute(it.key) },
-                                    onArtistClick = { artistRoute(it.key) },
+                                    onAlbumClick = { openHomeRoute(albumRoute, it.key) },
+                                    onArtistClick = { openHomeRoute(artistRoute, it.key) },
                                     onPlaylistClick = {
-                                        playlistRoute(
-                                            p0 = it.key,
-                                            p1 = null,
-                                            p2 = null,
-                                            p3 = it.channel?.name == "YouTube Music"
-                                        )
+                                        openHomeRoute(playlistRoute, it.key, null, null, it.channel?.name == "YouTube Music")
                                     },
                                     onSearchClick = onSearchClick,
                                     showHeader = false
                                 )
         
                                 1 -> HomeDiscovery(
-                                    onMoodClick = { mood -> moodRoute(mood.toUiMood()) },
-                                    onNewReleaseAlbumClick = { albumRoute(it) },
+                                    onMoodClick = { mood -> openHomeRoute(moodRoute, mood.toUiMood()) },
+                                    onNewReleaseAlbumClick = { openHomeRoute(albumRoute, it) },
                                     onSearchClick = onSearchClick,
-                                    onMoreMoodsClick = { moreMoodsRoute() },
-                                    onMoreAlbumsClick = { moreAlbumsRoute() },
-                                    onPlaylistClick = { playlistRoute(it, null, null, true) }
+                                    onMoreMoodsClick = { openHomeRoute(moreMoodsRoute) },
+                                    onMoreAlbumsClick = { openHomeRoute(moreAlbumsRoute) },
+                                    onPlaylistClick = { openHomeRoute(playlistRoute, it, null, null, true) }
                                 )
         
         
                                 3 -> HomePlaylists(
-                                    onBuiltInPlaylist = { builtInPlaylistRoute(it) },
-                                    onPlaylistClick = { localPlaylistRoute(it.id) },
+                                    onBuiltInPlaylist = { openHomeRoute(builtInPlaylistRoute, it) },
+                                    onPlaylistClick = { openHomeRoute(localPlaylistRoute, it.id) },
                                     onPipedPlaylistClick = { session, playlist ->
-                                        pipedPlaylistRoute(
-                                            p0 = session.apiBaseUrl.toString(),
-                                            p1 = session.token,
-                                            p2 = playlist.id.toString()
-                                        )
+                                        openHomeRoute(pipedPlaylistRoute, session.apiBaseUrl.toString(), session.token, playlist.id.toString())
                                     },
                                     onSearchClick = onSearchClick
                                 )
         
                                 4 -> HomeArtistList(
-                                    onArtistClick = { artistRoute(it.id) },
+                                    onArtistClick = { openHomeRoute(artistRoute, it.id) },
                                     onSearchClick = onSearchClick
                                 )
         
                                 5 -> HomeAlbums(
-                                    onAlbumClick = { albumRoute(it.id) },
+                                    onAlbumClick = { openHomeRoute(albumRoute, it.id) },
                                     onSearchClick = onSearchClick
                                 )
         
