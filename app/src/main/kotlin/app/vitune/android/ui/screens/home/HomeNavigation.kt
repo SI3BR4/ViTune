@@ -174,7 +174,6 @@ internal fun HomeNavigationHost(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         BasicText(stringResource(R.string.navigation_library), style = typography.m.copy(color = palette.text),
                             modifier = Modifier.weight(1f).padding(12.dp))
-                        NavigationIcon(R.drawable.close, stringResource(R.string.navigation_close_menu)) { settleDrawer(false) }
                     }
                     HomeDestination.library.forEach { destination ->
                         val label = stringResource(destination.title)
