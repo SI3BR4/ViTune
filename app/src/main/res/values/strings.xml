@@ -334,6 +334,7 @@
     <string name="reset_blacklist">Reset blacklist</string>
     <string name="blacklist_empty">Blacklist empty</string>
     <string name="pre_cache">Pre cache</string>
+    <string name="pre_cache_requested">Requesting download…</string>
     <string name="swipe_to_hide_song">Swipe to hide song</string>
     <string name="swipe_to_hide_song_description">When you swipe a song to the left, it gets removed from the database and cache</string>
     <string name="swipe_to_hide_song_confirm">Confirm swipe to hide song</string>
