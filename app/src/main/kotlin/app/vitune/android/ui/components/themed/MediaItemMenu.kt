@@ -756,7 +756,11 @@ fun MediaItemMenu(
                             context = context.applicationContext,
                             mediaItem = mediaItem
                         )
-                    }.exceptionOrNull()?.printStackTrace()
+                        context.toast(context.getString(R.string.pre_cache_requested))
+                    }.onFailure {
+                        it.printStackTrace()
+                        context.toast(context.getString(R.string.error_pre_cache))
+                    }
                 }
             )
 
