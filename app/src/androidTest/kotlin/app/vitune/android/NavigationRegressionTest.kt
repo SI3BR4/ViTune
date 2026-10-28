@@ -12,7 +12,6 @@ import androidx.test.uiautomator.Until
 import org.junit.Assert.*
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.io.File
 
 @RunWith(AndroidJUnit4::class)
 class NavigationRegressionTest {
@@ -33,8 +32,10 @@ class NavigationRegressionTest {
                     device.wait(Until.hasObject(By.pkg(context.packageName)), 5000))
             }
             fun capture(name: String) {
-                val directory = File(context.getExternalFilesDir(null), "navigation-regression").apply { mkdirs() }
-                assertTrue(device.takeScreenshot(File(directory, name + ".png")))
+                val path = "/data/local/tmp/vitune-navigation/" + name + ".png"
+                device.executeShellCommand("mkdir -p /data/local/tmp/vitune-navigation")
+                device.executeShellCommand("screencap -p " + path)
+                assertTrue(device.executeShellCommand("test -s " + path + " && echo CAPTURED").contains("CAPTURED"))
             }
             repeat(6) {
                 tab("Configurações")
