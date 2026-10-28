@@ -2,7 +2,11 @@ package app.vitune.android.ui.screens.home
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.key
+import androidx.compose.runtime.SideEffect
+import androidx.compose.ui.res.stringResource
+import app.vitune.android.R
+import app.vitune.android.ui.components.themed.LocalScreenHeading
+import app.vitune.android.ui.components.themed.LocalScreenSearchAvailable
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import app.vitune.android.LocalPlayerAwareWindowInsets
@@ -38,8 +42,8 @@ internal fun HomeScreen(navigation: HomeNavigationState) {
     val saveableStateHolder = rememberSaveableStateHolder()
     PersistMapCleanup("home/")
 
-    key(navigation.generation.value) {
-        RouteHandler {
+    RouteHandler {
+            SideEffect { navigation.closeRoute = { replace(null) } }
             GlobalRoutes()
     
             localPlaylistRoute { playlistId ->
@@ -67,7 +71,14 @@ internal fun HomeScreen(navigation: HomeNavigationState) {
                     HomeToolbar(navigation)
                     val insets = LocalPlayerAwareWindowInsets.current
                     CompositionLocalProvider(
-                        LocalPlayerAwareWindowInsets provides insets.only(WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom)
+                        LocalPlayerAwareWindowInsets provides insets.only(WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom),
+                        LocalScreenHeading provides stringResource(when (navigation.destination) {
+                            HomeDestination.Home -> R.string.quick_picks
+                            HomeDestination.Explore -> R.string.discover
+                            HomeDestination.Local -> R.string.local
+                            else -> navigation.destination.title
+                        }),
+                        LocalScreenSearchAvailable provides true
                     ) {
                         val currentTabIndex = navigation.destination.id
                         saveableStateHolder.SaveableStateProvider(key = currentTabIndex) {
@@ -101,9 +112,6 @@ internal fun HomeScreen(navigation: HomeNavigationState) {
                                     onPlaylistClick = { playlistRoute(it, null, null, true) }
                                 )
         
-                                2 -> HomeSongs(
-                                    onSearchClick = onSearchClick
-                                )
         
                                 3 -> HomePlaylists(
                                     onBuiltInPlaylist = { builtInPlaylistRoute(it) },
@@ -137,5 +145,4 @@ internal fun HomeScreen(navigation: HomeNavigationState) {
                 }
             }
         }
-    }
 }

@@ -3,6 +3,7 @@ package app.vitune.android.ui.screens.home
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
@@ -25,6 +26,10 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import app.vitune.android.utils.medium
 import app.vitune.android.R
 import app.vitune.android.ui.screens.searchRoute
@@ -35,7 +40,6 @@ import kotlinx.coroutines.launch
 internal enum class HomeDestination(val id: Int, val title: Int, val icon: Int) {
     Home(0, R.string.navigation_home, R.drawable.navigation_home),
     Explore(1, R.string.navigation_explore, R.drawable.globe),
-    Songs(2, R.string.songs, R.drawable.musical_notes),
     Playlists(3, R.string.playlists, R.drawable.playlist),
     Artists(4, R.string.artists, R.drawable.person),
     Albums(5, R.string.albums, R.drawable.disc),
@@ -47,31 +51,30 @@ internal enum class HomeDestination(val id: Int, val title: Int, val icon: Int) 
 
     companion object {
         val primary = listOf(Home, Explore, Downloads, Settings)
-        val library = listOf(History, Favorites, Playlists, Artists, Albums, Local, Songs)
+        val library = listOf(History, Favorites, Playlists, Artists, Albums, Local)
     }
 }
 
 internal class HomeNavigationState(
     val selected: MutableState<Int>,
-    val generation: MutableState<Int>,
     val drawer: DrawerState
 ) {
-    val destination get() = HomeDestination.entries.first { it.id == selected.value }
+    val destination get() = HomeDestination.entries.firstOrNull { it.id == selected.value } ?: HomeDestination.Home
     // Content height only. System navigation padding is accounted for separately.
     var barHeight by mutableStateOf(72.dp)
     var toolbarHeight by mutableStateOf(80.dp)
+    var closeRoute: (() -> Unit)? = null
     fun select(destination: HomeDestination) {
-        selected.value = destination.id
-        generation.value++
+        closeRoute?.invoke()
+        if (selected.value != destination.id) selected.value = destination.id
     }
 }
 
 @Composable
 internal fun rememberHomeNavigationState(): HomeNavigationState {
     val selected = rememberSaveable { mutableStateOf(HomeDestination.Home.id) }
-    val generation = rememberSaveable { mutableStateOf(0) }
     val drawer = rememberDrawerState(DrawerValue.Closed)
-    return remember(selected, generation, drawer) { HomeNavigationState(selected, generation, drawer) }
+    return remember(selected, drawer) { HomeNavigationState(selected, drawer) }
 }
 
 @Composable
@@ -137,25 +140,26 @@ internal fun HomeNavigationHost(
                     }.heightIn(min = 72.dp), verticalAlignment = Alignment.CenterVertically) {
                         HomeDestination.primary.forEach { destination ->
                             val selected = destination == state.destination
-                            val color = if (selected) palette.onAccent else palette.text
+                            val label = stringResource(destination.title)
+                            val interaction = remember { MutableInteractionSource() }
                             Column(
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterVertically),
                                 modifier = Modifier.weight(1f).heightIn(min = 72.dp)
-                                    .selectable(selected, role = Role.Tab, onClick = { state.select(destination) })
-                                    .padding(horizontal = 2.dp, vertical = 8.dp)
+                                    .semantics { contentDescription = label }
+                                    .selectable(selected, interactionSource = interaction, indication = null,
+                                        role = Role.Tab, onClick = { state.select(destination) })
+                                    .padding(horizontal = 1.dp, vertical = 8.dp)
                             ) {
-                                Column(
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.spacedBy(4.dp),
-                                    modifier = Modifier.fillMaxWidth()
-                                        .background(if (selected) palette.accent else androidx.compose.ui.graphics.Color.Transparent, RoundedCornerShape(18.dp))
-                                        .padding(horizontal = 4.dp, vertical = 6.dp)
-                                ) {
-                                    Image(painterResource(destination.icon), null, colorFilter = ColorFilter.tint(color),
-                                        modifier = Modifier.size(24.dp))
-                                    BasicText(stringResource(destination.title), style = typography.xxs.copy(color = color))
+                                Box(Modifier.size(width = 56.dp, height = 32.dp)
+                                    .background(if (selected) palette.accent else androidx.compose.ui.graphics.Color.Transparent, RoundedCornerShape(16.dp)),
+                                    contentAlignment = Alignment.Center) {
+                                    Image(painterResource(destination.icon), null,
+                                        colorFilter = ColorFilter.tint(if (selected) palette.onAccent else palette.text),
+                                        modifier = Modifier.size(22.dp))
                                 }
+                                BasicText(label, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis,
+                                    style = typography.xxs.copy(color = palette.text, fontSize = 10.sp, lineHeight = 12.sp))
                             }
                         }
                     }
@@ -196,7 +200,7 @@ internal fun HomeToolbar(state: HomeNavigationState) {
         NavigationIcon(R.drawable.navigation_menu, stringResource(R.string.navigation_open_menu)) {
             scope.launch { state.drawer.open() }
         }
-        BasicText(stringResource(if (state.destination == HomeDestination.Home) R.string.quick_picks else state.destination.title), style = typography.xxl.medium.copy(color = palette.text),
+        BasicText(stringResource(if (state.destination == HomeDestination.Home) R.string.quick_picks else state.destination.title), maxLines = 1, overflow = TextOverflow.Ellipsis, style = typography.l.medium.copy(color = palette.text),
             modifier = Modifier.weight(1f).padding(horizontal = 8.dp))
         NavigationIcon(R.drawable.search, stringResource(R.string.navigation_search)) { scope.launch { searchRoute.ensureGlobal("") } }
     }
