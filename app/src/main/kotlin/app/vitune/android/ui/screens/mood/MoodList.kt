@@ -26,7 +26,6 @@ import app.vitune.android.LocalPlayerAwareWindowInsets
 import app.vitune.android.R
 import app.vitune.android.models.Mood
 import app.vitune.android.ui.components.ShimmerHost
-import app.vitune.android.ui.components.themed.Header
 import app.vitune.android.ui.components.themed.HeaderPlaceholder
 import app.vitune.android.ui.components.themed.TextPlaceholder
 import app.vitune.android.ui.items.AlbumItem
@@ -37,6 +36,7 @@ import app.vitune.android.ui.screens.albumRoute
 import app.vitune.android.ui.screens.artistRoute
 import app.vitune.android.ui.screens.playlistRoute
 import app.vitune.android.utils.center
+import app.vitune.android.utils.medium
 import app.vitune.android.utils.secondary
 import app.vitune.android.utils.semiBold
 import app.vitune.compose.persist.persist
@@ -81,7 +81,7 @@ fun MoodList(
 
     val sectionTextModifier = Modifier
         .padding(horizontal = 16.dp)
-        .padding(top = 24.dp, bottom = 8.dp)
+        .padding(top = 12.dp, bottom = 6.dp)
         .padding(endPaddingValues)
 
     moodPage?.getOrNull()?.let { moodResult ->
@@ -96,12 +96,19 @@ fun MoodList(
                 key = "header",
                 contentType = 0
             ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Header(title = mood.name)
-                }
+                BasicText(
+                    text = mood.name,
+                    style = typography.xxl.medium,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
+                )
             }
 
-            moodResult.items.forEach { item ->
+            moodResult.items.filter { section ->
+                section.items.any { child ->
+                    child.key != DEFAULT_BROWSE_ID && (child is Innertube.AlbumItem ||
+                        child is Innertube.ArtistItem || child is Innertube.PlaylistItem)
+                }
+            }.forEach { item ->
                 item {
                     BasicText(
                         text = item.title.orEmpty(),
