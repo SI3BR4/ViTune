@@ -3,6 +3,7 @@ package app.vitune.android.ui.components.themed
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -69,6 +70,28 @@ fun Header(
             .heightIn(min = 48.dp),
         content = actionsContent
     )
+}
+
+/** Compact, content-sized title and action row for playlist screens. */
+@Composable
+fun CompactPlaylistHeader(
+    title: String,
+    modifier: Modifier = Modifier,
+    actionsContent: @Composable RowScope.() -> Unit
+) {
+    Column(modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+        Box(modifier = Modifier.fillMaxWidth().padding(top = 8.dp), contentAlignment = Alignment.CenterEnd) {
+            FadingRow {
+                BasicText(text = title, style = LocalAppearance.current.typography.xxl.medium, maxLines = 1)
+            }
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            content = actionsContent
+        )
+    }
 }
 
 @Composable
