@@ -54,6 +54,11 @@ class NavigationRegressionTest {
                 tab("Início")
             }
             tab("Explorar")
+            val more = requireNotNull(device.wait(Until.findObject(By.text("Mais")), 30000)) { "Explore data unavailable for click test" }
+            more.click()
+            assertTrue("Explore item did not open", device.wait(Until.gone(By.desc("Abrir menu lateral")), 10000))
+            device.pressBack()
+            assertTrue(device.wait(Until.hasObject(By.desc("Abrir menu lateral")), 10000))
             assertFalse("Duplicate Explore title", device.hasObject(By.text("Descubra")))
             capture("explore-compact")
             tab("Configurações")
