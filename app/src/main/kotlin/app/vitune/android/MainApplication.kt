@@ -276,7 +276,7 @@ class MainActivity : ComponentActivity(), MonetColorsChangedListener {
                 val bottom =
                     if (imeVisible) imeBottomDp.coerceAtLeast(playerBottomSheetState.value)
                     else playerBottomSheetState.value.coerceIn(
-                        animatedBottomDp..playerBottomSheetState.collapsedBound
+                        animatedBottomDp.coerceAtMost(playerBottomSheetState.collapsedBound)..playerBottomSheetState.collapsedBound
                     )
 
                 windowInsets
