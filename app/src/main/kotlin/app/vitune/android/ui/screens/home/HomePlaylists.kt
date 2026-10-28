@@ -35,7 +35,6 @@ import app.vitune.android.R
 import app.vitune.android.models.PipedSession
 import app.vitune.android.models.Playlist
 import app.vitune.android.models.PlaylistPreview
-import app.vitune.android.preferences.DataPreferences
 import app.vitune.android.preferences.OrderPreferences
 import app.vitune.android.preferences.UIStatePreferences
 import app.vitune.android.query
@@ -47,7 +46,6 @@ import app.vitune.android.ui.components.themed.TextFieldDialog
 import app.vitune.android.ui.components.themed.VerticalDivider
 import app.vitune.android.ui.items.PlaylistItem
 import app.vitune.android.ui.screens.Route
-import app.vitune.android.ui.screens.builtinplaylist.BuiltInPlaylistScreen
 import app.vitune.android.ui.screens.settings.SettingsEntryGroupText
 import app.vitune.android.ui.screens.settings.SettingsGroupSpacer
 import app.vitune.compose.persist.persist
@@ -111,7 +109,6 @@ fun HomePlaylists(
 
     val lazyGridState = rememberLazyGridState()
 
-    val builtInPlaylists by BuiltInPlaylistScreen.shownPlaylistsAsState()
 
     Box {
         LazyVerticalGrid(
@@ -175,67 +172,6 @@ fun HomePlaylists(
                         modifier = Modifier.graphicsLayer { rotationZ = sortOrderIconRotation }
                     )
                 }
-            }
-
-            // TODO: clean up (also in BuiltInPlaylistScreen): icon etc. could live in BuiltInPlaylist (cleans up duplicate code mess)
-
-            if (BuiltInPlaylist.Favorites in builtInPlaylists) item(key = "favorites") {
-                PlaylistItem(
-                    icon = R.drawable.heart,
-                    colorTint = colorPalette.red,
-                    name = stringResource(R.string.favorites),
-                    songCount = null,
-                    thumbnailSize = Dimensions.thumbnails.playlist,
-                    alternative = UIStatePreferences.playlistsAsGrid,
-                    modifier = Modifier
-                        .animateItem()
-                        .clickable { onBuiltInPlaylist(BuiltInPlaylist.Favorites) }
-                )
-            }
-
-            if (BuiltInPlaylist.Offline in builtInPlaylists) item(key = "offline") {
-                PlaylistItem(
-                    icon = R.drawable.airplane,
-                    colorTint = colorPalette.blue,
-                    name = stringResource(R.string.offline),
-                    songCount = null,
-                    thumbnailSize = Dimensions.thumbnails.playlist,
-                    alternative = UIStatePreferences.playlistsAsGrid,
-                    modifier = Modifier
-                        .animateItem()
-                        .clickable { onBuiltInPlaylist(BuiltInPlaylist.Offline) }
-                )
-            }
-
-            if (BuiltInPlaylist.Top in builtInPlaylists) item(key = "top") {
-                PlaylistItem(
-                    icon = R.drawable.trending,
-                    colorTint = colorPalette.red,
-                    name = stringResource(
-                        R.string.format_my_top_playlist,
-                        DataPreferences.topListLength
-                    ),
-                    songCount = null,
-                    thumbnailSize = Dimensions.thumbnails.playlist,
-                    alternative = UIStatePreferences.playlistsAsGrid,
-                    modifier = Modifier
-                        .animateItem()
-                        .clickable { onBuiltInPlaylist(BuiltInPlaylist.Top) }
-                )
-            }
-
-            if (BuiltInPlaylist.History in builtInPlaylists) item(key = "history") {
-                PlaylistItem(
-                    icon = R.drawable.history,
-                    colorTint = colorPalette.textDisabled,
-                    name = stringResource(R.string.history),
-                    songCount = null,
-                    thumbnailSize = Dimensions.thumbnails.playlist,
-                    alternative = UIStatePreferences.playlistsAsGrid,
-                    modifier = Modifier
-                        .animateItem()
-                        .clickable { onBuiltInPlaylist(BuiltInPlaylist.History) }
-                )
             }
 
             items(

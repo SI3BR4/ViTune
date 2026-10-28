@@ -93,6 +93,7 @@ internal fun HomeScreen(navigation: HomeNavigationState) {
                                 8 -> BuiltInPlaylistSongs(BuiltInPlaylist.Favorites)
                                 9 -> HomeDownloads(onSearchClick)
                                 10 -> SettingsScreen(onBack = { navigation.select(HomeDestination.Home) })
+                                11 -> BuiltInPlaylistSongs(BuiltInPlaylist.Offline)
                                 0 -> QuickPicks(
                                     onAlbumClick = { openHomeRoute(albumRoute, it.key) },
                                     onArtistClick = { openHomeRoute(artistRoute, it.key) },

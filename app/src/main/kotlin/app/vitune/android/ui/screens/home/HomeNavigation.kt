@@ -47,11 +47,12 @@ internal enum class HomeDestination(val id: Int, val title: Int, val icon: Int) 
     History(7, R.string.history, R.drawable.history),
     Favorites(8, R.string.favorites, R.drawable.heart),
     Downloads(9, R.string.navigation_downloads, R.drawable.navigation_downloads),
-    Settings(10, R.string.navigation_settings, R.drawable.settings);
+    Settings(10, R.string.navigation_settings, R.drawable.settings),
+    Offline(11, R.string.offline, R.drawable.airplane);
 
     companion object {
         val primary = listOf(Home, Explore, Downloads, Settings)
-        val library = listOf(History, Favorites, Playlists, Artists, Albums, Local)
+        val library = listOf(History, Favorites, Playlists, Offline, Artists, Albums, Local)
     }
 }
 
@@ -164,24 +165,30 @@ internal fun HomeNavigationHost(
                         }
                     }
                 }
-                // Leave the Android system Back gesture region untouched. Only a narrow edge
-                // strip handles drawer opening; horizontal carousels elsewhere keep their gestures.
+                // Keep the system Back gesture region free; the compact handle supports both tap and drag.
                 val gestureLeft = with(density) { WindowInsets.systemGestures.getLeft(density, LocalLayoutDirection.current).toDp() }
-                val toolbarBottom = state.toolbarHeight
+                val openMenuLabel = stringResource(R.string.navigation_open_menu)
                 Box(Modifier.align(Alignment.CenterStart).padding(start = gestureLeft)
-                    .padding(top = toolbarBottom, bottom = state.barHeight + 96.dp)
-                    .width(20.dp).fillMaxHeight()
+                    .size(width = 48.dp, height = 80.dp)
+                    .semantics { contentDescription = openMenuLabel }
+                    .clickable(role = Role.Button, onClickLabel = openMenuLabel) { scope.launch { state.drawer.open() } }
                     .pointerInput(state.drawer, density) {
                         var distance = 0f
                         detectHorizontalDragGestures(
                             onDragStart = { distance = 0f },
                             onDragCancel = { distance = 0f },
                             onDragEnd = {
-                                if (distance > with(density) { 48.dp.toPx() })
-                                    scope.launch { state.drawer.open() }
+                                if (distance > with(density) { 32.dp.toPx() }) scope.launch { state.drawer.open() }
                             }
                         ) { change, amount -> distance += amount; change.consume() }
-                    })
+                    }, contentAlignment = Alignment.CenterStart) {
+                    Box(Modifier.width(20.dp).height(72.dp)
+                        .background(palette.background2, RoundedCornerShape(topEnd = 10.dp, bottomEnd = 10.dp)),
+                        contentAlignment = Alignment.Center) {
+                        Image(painterResource(R.drawable.chevron_forward), null,
+                            colorFilter = ColorFilter.tint(palette.text), modifier = Modifier.size(18.dp))
+                    }
+                }
             }
         }
     }
@@ -197,9 +204,6 @@ internal fun HomeToolbar(state: HomeNavigationState) {
     Row(Modifier.fillMaxWidth().onSizeChanged { state.toolbarHeight = with(density) { it.height.toDp() } }
         .background(palette.background0).statusBarsPadding()
         .heightIn(min = 56.dp).padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-        NavigationIcon(R.drawable.navigation_menu, stringResource(R.string.navigation_open_menu)) {
-            scope.launch { state.drawer.open() }
-        }
         BasicText(stringResource(if (state.destination == HomeDestination.Home) R.string.quick_picks else state.destination.title), maxLines = 1, overflow = TextOverflow.Ellipsis, style = typography.l.medium.copy(color = palette.text),
             modifier = Modifier.weight(1f).padding(horizontal = 8.dp))
         NavigationIcon(R.drawable.search, stringResource(R.string.navigation_search)) { scope.launch { searchRoute.ensureGlobal("") } }
