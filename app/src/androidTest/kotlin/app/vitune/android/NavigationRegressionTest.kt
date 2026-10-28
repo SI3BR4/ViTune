@@ -42,6 +42,7 @@ class NavigationRegressionTest {
             }
             repeat(6) {
                 tab("Configurações")
+                assertFalse("Settings back arrow visible", device.hasObject(By.desc(context.getString(R.string.navigation_back))))
                 val appearance = requireNotNull(device.wait(Until.findObject(By.text("Aparência")), 10000))
                 assertNotNull(appearance)
                 assertEquals("Repeated Appearance heading", 1, device.findObjects(By.text("Aparência")).size)
@@ -81,6 +82,7 @@ class NavigationRegressionTest {
                 device.waitForIdle(500)
             }
             openDrawerFromHome()
+            assertFalse("Drawer close button visible", device.hasObject(By.desc(context.getString(R.string.navigation_close_menu))))
             assertFalse("Removed songs entry still visible", device.hasObject(By.text("Músicas")))
             assertTrue("Offline still visible in drawer", device.findObjects(By.text("Offline"))
                 .none { it.visibleBounds.centerY() < device.displayHeight * 3 / 4 })
