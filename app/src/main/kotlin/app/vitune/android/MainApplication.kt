@@ -75,6 +75,8 @@ import app.vitune.android.ui.components.themed.LinearProgressIndicator
 import app.vitune.android.ui.screens.albumRoute
 import app.vitune.android.ui.screens.artistRoute
 import app.vitune.android.ui.screens.home.HomeScreen
+import app.vitune.android.ui.screens.home.HomeNavigationHost
+import app.vitune.android.ui.screens.home.rememberHomeNavigationState
 import app.vitune.android.ui.screens.player.Player
 import app.vitune.android.ui.screens.player.Thumbnail
 import app.vitune.android.ui.screens.playlistRoute
@@ -245,8 +247,10 @@ class MainActivity : ComponentActivity(), MonetColorsChangedListener {
                     .asPaddingValues()
             )
         ) {
+            val navigation = rememberHomeNavigationState()
             val density = LocalDensity.current
-            val bottomDp = with(density) { windowInsets.getBottom(density).toDp() }
+            val systemBottomDp = with(density) { windowInsets.getBottom(density).toDp() }
+            val bottomDp = systemBottomDp + navigation.barHeight
 
             val imeVisible = WindowInsets.isImeVisible
             val imeBottomDp = with(density) { WindowInsets.ime.getBottom(density).toDp() }
@@ -287,57 +291,64 @@ class MainActivity : ComponentActivity(), MonetColorsChangedListener {
                 }
             )
 
-            KeyedCrossfade(state = pip) { currentPip ->
-                if (currentPip) Thumbnail(
-                    isShowingLyrics = true,
-                    onShowLyrics = { },
-                    isShowingStatsForNerds = false,
-                    onShowStatsForNerds = { },
-                    onOpenDialog = { },
-                    likedAt = null,
-                    setLikedAt = { },
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.FillBounds,
-                    shouldShowSynchronizedLyrics = true,
-                    setShouldShowSynchronizedLyrics = { },
-                    showLyricsControls = false
-                ) else CompositionLocalProvider(
-                    LocalPlayerAwareWindowInsets provides playerAwareWindowInsets
-                ) {
-                    val isDownloading by downloadState.collectAsState()
-
-                    Box {
-                        HomeScreen()
-                    }
-
-                    AnimatedVisibility(
-                        visible = isDownloading,
-                        modifier = Modifier.padding(playerAwareWindowInsets.asPaddingValues())
+            HomeNavigationHost(
+                state = navigation,
+                chromeVisible = !pip && !imeVisible && playerBottomSheetState.value <= playerBottomSheetState.collapsedBound
+            ) {
+                KeyedCrossfade(state = pip) { currentPip ->
+                    if (currentPip) Thumbnail(
+                        isShowingLyrics = true,
+                        onShowLyrics = { },
+                        isShowingStatsForNerds = false,
+                        onShowStatsForNerds = { },
+                        onOpenDialog = { },
+                        likedAt = null,
+                        setLikedAt = { },
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.FillBounds,
+                        shouldShowSynchronizedLyrics = true,
+                        setShouldShowSynchronizedLyrics = { },
+                        showLyricsControls = false
+                    ) else CompositionLocalProvider(
+                        LocalPlayerAwareWindowInsets provides playerAwareWindowInsets
                     ) {
-                        LinearProgressIndicator(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .align(Alignment.TopCenter)
-                        )
-                    }
+                        val isDownloading by downloadState.collectAsState()
 
-                    CompositionLocalProvider(
-                        LocalAppearance provides LocalAppearance.current.let {
-                            if (it.colorPalette.isDark && AppearancePreferences.darkness == Darkness.AMOLED) {
-                                it.copy(colorPalette = it.colorPalette.amoled())
-                            } else it
+                        Box {
+                            HomeScreen(navigation)
                         }
-                    ) {
-                        Player(
-                            layoutState = playerBottomSheetState,
+
+                        AnimatedVisibility(
+                            visible = isDownloading,
+                            modifier = Modifier.padding(playerAwareWindowInsets.asPaddingValues())
+                        ) {
+                            LinearProgressIndicator(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .align(Alignment.TopCenter)
+                            )
+                        }
+
+                        CompositionLocalProvider(
+                            LocalAppearance provides LocalAppearance.current.let {
+                                if (it.colorPalette.isDark && AppearancePreferences.darkness == Darkness.AMOLED) {
+                                    it.copy(colorPalette = it.colorPalette.amoled())
+                                } else it
+                            }
+                        ) {
+                            Player(
+                                layoutState = playerBottomSheetState,
+                                modifier = Modifier.align(Alignment.BottomCenter),
+                                collapsedBottomPadding = navigation.barHeight
+                            )
+                        }
+
+                        BottomSheetMenu(
                             modifier = Modifier.align(Alignment.BottomCenter)
                         )
                     }
-
-                    BottomSheetMenu(
-                        modifier = Modifier.align(Alignment.BottomCenter)
-                    )
                 }
+
             }
 
             vm.binder?.player.DisposableListener {
